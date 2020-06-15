@@ -1,0 +1,14 @@
+
+#include <octomap_server2/octomap_server.hpp>
+
+namespace octomap_server {
+    OctomapServer::OctomapServer(
+        const rclcpp::NodeOptions &options,
+        const std::string node_name):
+        Node(node_name, options) {
+        
+        
+    }
+}
+
+RCLCPP_COMPONENTS_REGISTER_NODE(octomap_server::OctomapServer)

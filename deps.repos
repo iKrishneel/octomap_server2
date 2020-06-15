@@ -1,0 +1,5 @@
+repositories:
+  ./../octomap_msgs:
+    type: git
+    url: https://github.com/OctoMap/octomap_msgs.git
+    version: ros2
