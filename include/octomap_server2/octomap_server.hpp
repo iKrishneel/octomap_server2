@@ -29,7 +29,9 @@
 #include <message_filters/time_synchronizer.h>
 
 #include <tf2/buffer_core.h>
+#include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_ros/message_filter.h>
 
 #include <octomap_msgs/conversions.h>
 #include <octomap_msgs/msg/octomap.hpp>
@@ -59,37 +61,52 @@ using OcTreeT = octomap::OcTree;
 using OctomapSrv =  octomap_msgs::srv::GetOctomap;
 using BBXSrv =  octomap_msgs::srv::BoundingBoxQuery;
 
+
+namespace ph = std::placeholders;
+
 namespace octomap_server {
     class OctomapServer: public rclcpp::Node {
+        
     protected:
 
+        std::shared_ptr<message_filters::Subscriber<
+                            sensor_msgs::msg::PointCloud2>> m_pointCloudSub;
+        std::shared_ptr<tf2_ros::MessageFilter<
+                            sensor_msgs::msg::PointCloud2>> m_tfPointCloudSub;
+        
         static std_msgs::msg::ColorRGBA heightMapColor(double h);
+
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2
+                          >::SharedPtr m_pointCloudPub;
+        rclcpp::Publisher<visualization_msgs::msg::MarkerArray
+                          >::SharedPtr m_fmarkerPub;
+        rclcpp::Publisher<visualization_msgs::msg::MarkerArray
+                          >::SharedPtr m_markerPub;
+        rclcpp::Publisher<octomap_msgs::msg::Octomap
+                          >::SharedPtr m_binaryMapPub;
+        rclcpp::Publisher<octomap_msgs::msg::Octomap
+                          >::SharedPtr m_fullMapPub;
+        rclcpp::Publisher<nav_msgs::msg::OccupancyGrid
+                          >::SharedPtr m_mapPub;
+        
         /*
-        ros::NodeHandle m_nh;
-        ros::NodeHandle m_nh_private;
-        ros::Publisher  m_markerPub,
-            m_binaryMapPub,
-            m_fullMapPub,
-            m_pointCloudPub,
-            m_collisionObjectPub,
-            m_mapPub,
+        ros::Publisher  m_collisionObjectPub,
             m_cmapPub,
             m_fmapPub,
-            m_fmarkerPub;
-
-        message_filters::Subscriber<sensor_msgs::PointCloud2>* m_pointCloudSub;
-        tf::MessageFilter<sensor_msgs::PointCloud2>* m_tfPointCloudSub;
-        ros::ServiceServer m_octomapBinaryService,
-            m_octomapFullService,
-            m_clearBBXService,
-            m_resetService;
-        tf::TransformListener m_tfListener;
         boost::recursive_mutex m_config_mutex;
-        dynamic_reconfigure::Server<OctomapServerConfig>
-        m_reconfigureServer;
         */
+        
+        rclcpp::Service<OctomapSrv>::SharedPtr m_octomapBinaryService;
+        rclcpp::Service<OctomapSrv>::SharedPtr m_octomapFullService;
+        rclcpp::Service<BBXSrv>::SharedPtr m_clearBBXService;
+        rclcpp::Service<std_srvs::srv::Empty>::SharedPtr m_resetService;
+
+        std::shared_ptr<tf2_ros::Buffer> buffer_;
+        std::shared_ptr<tf2_ros::TransformListener> m_tfListener;
 
         OcTreeT* m_octree;
+        // std::shared_ptr<OcTreeT> m_octree;
+        
         octomap::KeyRay m_keyRay;  // temp storage for ray casting
         octomap::OcTreeKey m_updateBBXMin;
         octomap::OcTreeKey m_updateBBXMax;
@@ -181,13 +198,9 @@ namespace octomap_server {
                     || oldMapInfo.origin.position.y != newMapInfo.origin.position.y);
         }
 
-        /*
-        void publishBinaryOctoMap(const ros::Time& rostime = ros::Time::now()) const;
-        void publishFullOctoMap(const ros::Time& rostime = ros::Time::now()) const;
-        virtual void publishAll(const ros::Time& rostime =
-        ros::Time::now());
-
-        */
+        void publishBinaryOctoMap(const rclcpp::Time &) const;
+        void publishFullOctoMap(const rclcpp::Time &) const;
+        virtual void publishAll(const rclcpp::Time &);
         
         virtual void insertScan(
             const geometry_msgs::msg::Point& sensorOrigin,
@@ -201,17 +214,18 @@ namespace octomap_server {
 
         bool isSpeckleNode(const octomap::OcTreeKey& key) const;
 
-        // virtual void handlePreNodeTraversal(const ros::Time& rostime);
-        // virtual void handlePostNodeTraversal(const ros::Time& rostime);
+        virtual void handlePreNodeTraversal(const rclcpp::Time &);
+        virtual void handlePostNodeTraversal(const rclcpp::Time &);
         virtual void handleNode(const OcTreeT::iterator& it) {};
         virtual void handleNodeInBBX(const OcTreeT::iterator& it) {};
         virtual void handleOccupiedNode(const OcTreeT::iterator& it);
         virtual void handleOccupiedNodeInBBX(const OcTreeT::iterator& it);
         virtual void handleFreeNode(const OcTreeT::iterator& it);
         virtual void handleFreeNodeInBBX(const OcTreeT::iterator& it);
+        virtual void update2DMap(const OcTreeT::iterator&, bool);
 
-        virtual void update2DMap(const OcTreeT::iterator& it, bool
-        occupied);
+        virtual void onInit();        
+        virtual void subscribe();
         
         void adjustMapData(nav_msgs::msg::OccupancyGrid& map,
                            const nav_msgs::msg::MapMetaData& oldMapInfo) const;
@@ -221,17 +235,22 @@ namespace octomap_server {
             const rclcpp::NodeOptions &,
             const std::string = "octomap_server");
         virtual ~OctomapServer();        
-        virtual bool octomapBinarySrv(OctomapSrv::Request &req,
-                                      OctomapSrv::GetOctomap::Response &res);
-        virtual bool octomapFullSrv(OctomapSrv::Request &req,
-                                    OctomapSrv::GetOctomap::Response &res);
-        bool clearBBXSrv(BBXSrv::Request &req,
-                         BBXSrv::Response &resp);
-        bool resetSrv(std_srvs::srv::Empty::Request &req,
-                      std_srvs::srv::Empty::Response &resp);
+        virtual bool octomapBinarySrv(
+            const std::shared_ptr<OctomapSrv::Request> ,
+            std::shared_ptr<OctomapSrv::Response>);
+        virtual bool octomapFullSrv(
+            const std::shared_ptr<OctomapSrv::Request> ,
+            std::shared_ptr<OctomapSrv::Response>);
+
+        bool clearBBXSrv(
+            const std::shared_ptr<BBXSrv::Request>,
+            std::shared_ptr<BBXSrv::Response>);
+        bool resetSrv(
+            const std::shared_ptr<std_srvs::srv::Empty::Request>,
+            std::shared_ptr<std_srvs::srv::Empty::Response>);
 
         virtual void insertCloudCallback(
-            const sensor_msgs::msg::PointCloud2::SharedPtr &);
+            const sensor_msgs::msg::PointCloud2::ConstSharedPtr &);
         virtual bool openFile(const std::string& filename);
 
     };    
