@@ -6,9 +6,6 @@ namespace octomap_server {
         const rclcpp::NodeOptions &options,
         const std::string node_name):
         Node(node_name, options),
-        // m_pointCloudSub(NULL),
-        // m_tfPointCloudSub(NULL),
-        // m_reconfigureServer(m_config_mutex, private_nh_),
         m_octree(NULL),
         m_maxRange(-1),
         // m_worldFrameId("/map"),
@@ -174,22 +171,7 @@ namespace octomap_server {
     }
 
     OctomapServer::~OctomapServer() {
-        /*
-        if (m_tfPointCloudSub){
-            delete m_tfPointCloudSub;
-            m_tfPointCloudSub = NULL;
-        }
 
-        if (m_pointCloudSub){
-            delete m_pointCloudSub;
-            m_pointCloudSub = NULL;
-        }
-
-        if (m_octree) {
-            delete m_octree;
-            m_octree = NULL;
-        }
-        */
     }
 
     void OctomapServer::onInit() {
@@ -350,11 +332,12 @@ namespace octomap_server {
             geometry_msgs::msg::TransformStamped sensorToBaseTf;
             
             try {
-                /*
-                m_tfListener.waitForTransform(
+                if (!this->buffer_->canTransform(
                     m_baseFrameId, cloud->header.frame_id,
-                    cloud->header.stamp, ros::Duration(0.2));
-                    */
+                    cloud->header.stamp)) {
+                    throw "Failed";
+                }
+
                 sensorToBaseTf = this->buffer_->lookupTransform(
                     m_baseFrameId, cloud->header.frame_id,
                     cloud->header.stamp);

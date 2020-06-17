@@ -94,13 +94,6 @@ namespace octomap_server {
         rclcpp::Publisher<nav_msgs::msg::OccupancyGrid
                           >::SharedPtr m_mapPub;
         
-        /*
-        ros::Publisher  m_collisionObjectPub,
-            m_cmapPub,
-            m_fmapPub,
-        boost::recursive_mutex m_config_mutex;
-        */
-        
         rclcpp::Service<OctomapSrv>::SharedPtr m_octomapBinaryService;
         rclcpp::Service<OctomapSrv>::SharedPtr m_octomapFullService;
         rclcpp::Service<BBXSrv>::SharedPtr m_clearBBXService;
