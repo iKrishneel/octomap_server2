@@ -3,6 +3,8 @@
 #ifndef _OCTOMAP_SERVER_HPP_
 #define _OCTOMAP_SERVER_HPP_
 
+#include <chrono>
+
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 
@@ -107,8 +109,7 @@ namespace octomap_server {
         std::shared_ptr<tf2_ros::Buffer> buffer_;
         std::shared_ptr<tf2_ros::TransformListener> m_tfListener;
 
-        OcTreeT* m_octree;
-        // std::shared_ptr<OcTreeT> m_octree;
+        std::shared_ptr<OcTreeT> m_octree;
         
         octomap::KeyRay m_keyRay;  // temp storage for ray casting
         octomap::OcTreeKey m_updateBBXMin;

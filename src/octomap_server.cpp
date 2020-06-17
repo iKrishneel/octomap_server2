@@ -10,7 +10,7 @@ namespace octomap_server {
         // m_tfPointCloudSub(NULL),
         // m_reconfigureServer(m_config_mutex, private_nh_),
         m_octree(NULL),
-        m_maxRange(-1.0),
+        m_maxRange(-1),
         // m_worldFrameId("/map"),
         m_worldFrameId("livox_frame"),
         m_baseFrameId("base_footprint"),
@@ -19,7 +19,7 @@ namespace octomap_server {
         m_colorFactor(0.8),
         m_latchedTopics(true),
         m_publishFreeSpace(false),
-        m_res(0.05),
+        m_res(0.3),
         m_treeDepth(0),
         m_maxTreeDepth(0),
         m_pointcloudMinX(-std::numeric_limits<double>::max()),
@@ -96,7 +96,7 @@ namespace octomap_server {
         double thresMax = this->declare_parameter("sensor_model/max", 0.97);
         m_compressMap = this->declare_parameter("compress_map", m_compressMap);
         m_incrementalUpdate = this->declare_parameter(
-            "incremental_2D_projection", m_incrementalUpdate);
+            "incremental_2D_projection", false);
 
         if (m_filterGroundPlane &&
             (m_pointcloudMinZ > 0.0 || m_pointcloudMaxZ < 0.0)) {
@@ -128,8 +128,8 @@ namespace octomap_server {
         }
 
         // initialize octomap object & params
-        m_octree = new OcTreeT(m_res);
-        // m_octree = std::make_shared<OcTreeT>(m_res);
+        // m_octree = new OcTreeT(m_res);
+        m_octree = std::make_shared<OcTreeT>(m_res);
         m_octree->setProbHit(probHit);
         m_octree->setProbMiss(probMiss);
         m_octree->setClampingThresMin(thresMin);
@@ -184,12 +184,12 @@ namespace octomap_server {
             delete m_pointCloudSub;
             m_pointCloudSub = NULL;
         }
-        */
 
-        if (m_octree){
+        if (m_octree) {
             delete m_octree;
             m_octree = NULL;
         }
+        */
     }
 
     void OctomapServer::onInit() {
@@ -228,7 +228,7 @@ namespace octomap_server {
                 *buffer_, m_worldFrameId, 5,
                 this->get_node_logging_interface(),
                 this->get_node_clock_interface(),
-                std::chrono::seconds(10));
+                std::chrono::seconds(1));
         this->m_tfPointCloudSub->connectInput(*m_pointCloudSub);
         this->m_tfPointCloudSub->registerCallback(
             std::bind(&OctomapServer::insertCloudCallback, this, ph::_1));
@@ -248,7 +248,7 @@ namespace octomap_server {
         RCLCPP_INFO(this->get_logger(), "Setup completed!");
     }
 
-    bool OctomapServer::openFile(const std::string& filename){
+    bool OctomapServer::openFile(const std::string &filename){
         if (filename.length() <= 3)
             return false;
 
@@ -258,15 +258,14 @@ namespace octomap_server {
                 return false;
             }
         } else if (suffix == ".ot") {
-            octomap::AbstractOcTree* tree = octomap::AbstractOcTree::read(filename);
+            auto tree = octomap::AbstractOcTree::read(filename);
             if (!tree){
                 return false;
             }
-            if (m_octree) {
-                delete m_octree;
-                m_octree = NULL;
-            }
-            m_octree = dynamic_cast<OcTreeT*>(tree);
+
+            OcTreeT *octree = dynamic_cast<OcTreeT*>(tree);
+            m_octree = std::shared_ptr<OcTreeT>(octree);
+            
             if (!m_octree) {
                 std::string msg = "Could not read OcTree in file";
                 RCLCPP_ERROR(this->get_logger(), msg.c_str());
@@ -296,7 +295,7 @@ namespace octomap_server {
         m_updateBBXMax[0] = m_octree->coordToKey(maxX);
         m_updateBBXMax[1] = m_octree->coordToKey(maxY);
         m_updateBBXMax[2] = m_octree->coordToKey(maxZ);
-
+        
         rclcpp::Clock::SharedPtr clock = std::make_shared<rclcpp::Clock>();
         publishAll(clock->now());
         return true;
@@ -304,7 +303,7 @@ namespace octomap_server {
 
     void OctomapServer::insertCloudCallback(
         const sensor_msgs::msg::PointCloud2::ConstSharedPtr &cloud){
-        // ros::WallTime startTime = ros::WallTime::now();
+        auto start = std::chrono::steady_clock::now();
         
         //
         // ground filtering in base frame
@@ -321,7 +320,7 @@ namespace octomap_server {
                 throw "Failed";
             }
             
-            RCLCPP_INFO(this->get_logger(), "Can transform");
+            // RCLCPP_INFO(this->get_logger(), "Can transform");
 
             sensorToWorldTf = this->buffer_->lookupTransform(
                 m_worldFrameId, cloud->header.frame_id,
@@ -347,31 +346,31 @@ namespace octomap_server {
         PCLPointCloud pc_nonground; // everything else
         
         if (m_filterGroundPlane) {
-            tf2::Stamped<tf2::Transform> baseToWorldTf;
-            tf2::Stamped<tf2::Transform> sensorToBaseTf;
-
-            /* todo:
+            geometry_msgs::msg::TransformStamped baseToWorldTf;
+            geometry_msgs::msg::TransformStamped sensorToBaseTf;
+            
             try {
+                /*
                 m_tfListener.waitForTransform(
                     m_baseFrameId, cloud->header.frame_id,
                     cloud->header.stamp, ros::Duration(0.2));
-                m_tfListener.lookupTransform(
+                    */
+                sensorToBaseTf = this->buffer_->lookupTransform(
                     m_baseFrameId, cloud->header.frame_id,
-                    cloud->header.stamp, sensorToBaseTf);
-                m_tfListener.lookupTransform(
-                    m_worldFrameId, m_baseFrameId,
-                    cloud->header.stamp, baseToWorldTf);
-            } catch(tf::TransformException& ex){
-                RCLCPP_ERROR(this->get_logger(),
-                             "Transform error for ground plane filter: "
-                             << ex.what() << ", quitting callback.\n"
-                             "You need to set the base_frame_id or disable filter_ground.");
+                    cloud->header.stamp);
+                baseToWorldTf = this->buffer_->lookupTransform(
+                    m_worldFrameId, m_baseFrameId, cloud->header.stamp);
+            } catch (tf2::TransformException& ex) {
+                std::string msg = std::string("Transform error for ground plane filter") +
+                    "You need to set the base_frame_id or disable filter_ground.";
+                RCLCPP_ERROR(this->get_logger(), "%s %", msg, ex.what());
+                return;
             }
-            */
 
-            Eigen::Matrix4f sensorToBase, baseToWorld;
-            pcl_ros::transformAsMatrix(sensorToBaseTf, sensorToBase);
-            pcl_ros::transformAsMatrix(baseToWorldTf, baseToWorld);
+            Eigen::Matrix4f sensorToBase =
+                pcl_ros::transformAsMatrix(sensorToBaseTf);
+            Eigen::Matrix4f baseToWorld = 
+                pcl_ros::transformAsMatrix(baseToWorldTf);
 
             // transform pointcloud from sensor frame to fixed robot frame
             pcl::transformPointCloud(pc, pc, sensorToBase);
@@ -403,30 +402,21 @@ namespace octomap_server {
             pc_ground.header = pc.header;
             pc_nonground.header = pc.header;
         }
-
+        
         insertScan(sensorToWorldTf.transform.translation,
                    pc_ground, pc_nonground);
 
-        
-        /* todo
-        double total_elapsed = 0;  //(ros::WallTime::now() - startTime).toSec();
-        RCLCPP_INFO(this->get_logger(),
-                    "Pointcloud insertion in OctomapServer done (%zu+%zu pts (ground/nonground), %f sec)",
-                    pc_ground.size(), pc_nonground.size(),
-        total_elapsed);
-        */
-
-        RCLCPP_INFO(this->get_logger(), "Publishing...");
+        auto end = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end - start;
+        RCLCPP_INFO(this->get_logger(), "Time lapse %f", elapsed_seconds.count());
         
         publishAll(cloud->header.stamp);
-
-        RCLCPP_INFO(this->get_logger(), "Done");
     }
 
     void OctomapServer::insertScan(
         const geometry_msgs::msg::Vector3 &sensorOriginTf,
         const PCLPointCloud& ground,
-        const PCLPointCloud& nonground){
+        const PCLPointCloud& nonground) {
         octomap::point3d sensorOrigin = octomap::pointTfToOctomap(sensorOriginTf);
         
         if (!m_octree->coordToKeyChecked(sensorOrigin, m_updateBBXMin)
@@ -443,8 +433,7 @@ namespace octomap_server {
         // instead of direct scan insertion, compute update to filter ground:
         octomap::KeySet free_cells, occupied_cells;
         // insert ground points only as free:
-        for (PCLPointCloud::const_iterator it = ground.begin();
-             it != ground.end(); ++it){
+        for (auto it = ground.begin(); it != ground.end(); ++it) {
             octomap::point3d point(it->x, it->y, it->z);
             // maxrange check
             if ((m_maxRange > 0.0) && ((point - sensorOrigin).norm() > m_maxRange) ) {
@@ -452,53 +441,50 @@ namespace octomap_server {
             }
 
             // only clear space (ground points)
-            if (m_octree->computeRayKeys(sensorOrigin, point, m_keyRay)){
+            if (m_octree->computeRayKeys(sensorOrigin, point, m_keyRay)) {
                 free_cells.insert(m_keyRay.begin(), m_keyRay.end());
             }
 
             octomap::OcTreeKey endKey;
-            if (m_octree->coordToKeyChecked(point, endKey)){
+            if (m_octree->coordToKeyChecked(point, endKey)) {
                 updateMinKey(endKey, m_updateBBXMin);
                 updateMaxKey(endKey, m_updateBBXMax);
-            } else{
-                // ROS_ERROR_STREAM("Could not generate Key for
-                // endpoint "<< point);
+            } else {
+                RCLCPP_ERROR(this->get_logger(),
+                             "Could not generate Key for endpoint");
             }
         }
 
+        auto start = std::chrono::steady_clock::now();
+                
         // all other points: free on ray, occupied on endpoint:
-        for (PCLPointCloud::const_iterator it = nonground.begin();
-             it != nonground.end(); ++it){
+        for (auto it = nonground.begin(); it != nonground.end(); ++it) {
             octomap::point3d point(it->x, it->y, it->z);
             // maxrange check
             if ((m_maxRange < 0.0) || ((point - sensorOrigin).norm() <= m_maxRange)) {
                 // free cells
-                if (m_octree->computeRayKeys(sensorOrigin, point, m_keyRay)){
+                if (m_octree->computeRayKeys(sensorOrigin, point, m_keyRay)) {
                     free_cells.insert(m_keyRay.begin(), m_keyRay.end());
                 }
                 // occupied endpoint
                 octomap::OcTreeKey key;
-                if (m_octree->coordToKeyChecked(point, key)){
+                if (m_octree->coordToKeyChecked(point, key)) {
                     occupied_cells.insert(key);
 
                     updateMinKey(key, m_updateBBXMin);
                     updateMaxKey(key, m_updateBBXMax);
 
-#ifdef COLOR_OCTOMAP_SERVER // NB: Only read and interpret color if it's an occupied node
-                    m_octree->averageNodeColor(
-                        it->x,
-                        it->y,
-                        it->z,
-                        it->r,
-                        it->g,
-                        it->b);
+#ifdef COLOR_OCTOMAP_SERVER
+                // NB: Only read and interpret color if it's an occupied node
+                    m_octree->averageNodeColor(it->x, it->y, it->z,
+                                               it->r, it->g, it->b);
 #endif
                 }
             } else {
                 // ray longer than maxrange:;
                 octomap::point3d new_end = sensorOrigin +
                     (point - sensorOrigin).normalized() * m_maxRange;
-                if (m_octree->computeRayKeys(sensorOrigin, new_end, m_keyRay)){
+                if (m_octree->computeRayKeys(sensorOrigin, new_end, m_keyRay)) {
                     free_cells.insert(m_keyRay.begin(), m_keyRay.end());
 
                     octomap::OcTreeKey endKey;
@@ -506,12 +492,17 @@ namespace octomap_server {
                         free_cells.insert(endKey);
                         updateMinKey(endKey, m_updateBBXMin);
                         updateMaxKey(endKey, m_updateBBXMax);
-                    } else{
-                        //!! ROS_ERROR_STREAM("Could not generate Key for endpoint "<<new_end);
+                    } else {
+                        RCLCPP_ERROR(this->get_logger(),
+                                     "Could not generate Key for endpoint");
                     }
                 }
             }
         }
+
+        auto end = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed_seconds = end - start;
+        RCLCPP_INFO(this->get_logger(), "Time lapse[insert] %f", elapsed_seconds.count());
 
         // mark free cells only if not seen occupied in this cloud
         for(auto it = free_cells.begin(), end=free_cells.end();
@@ -740,7 +731,7 @@ namespace octomap_server {
         handlePostNodeTraversal(rostime);
 
         // finish MarkerArray:
-        if (publishMarkerArray){
+        if (publishMarkerArray) {
             for (unsigned i= 0; i < occupiedNodesVis.markers.size(); ++i){
                 double size = m_octree->getNodeSize(i);
 
@@ -768,7 +759,7 @@ namespace octomap_server {
         }
 
         // finish FreeMarkerArray:
-        if (publishFreeMarkerArray){
+        if (publishFreeMarkerArray) {
             for (unsigned i= 0; i < freeNodesVis.markers.size(); ++i){
                 double size = m_octree->getNodeSize(i);
 
@@ -795,7 +786,7 @@ namespace octomap_server {
 
 
         // finish pointcloud:
-        if (publishPointCloud){
+        if (publishPointCloud) {
             sensor_msgs::msg::PointCloud2 cloud;
             pcl::toROSMsg(pclCloud, cloud);
             cloud.header.frame_id = m_worldFrameId;
