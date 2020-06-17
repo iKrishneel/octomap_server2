@@ -42,6 +42,7 @@
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <geometry_msgs/msg/point.hpp>
+#include <geometry_msgs/msg/vector3.hpp>
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/quaternion.hpp>
 
@@ -90,7 +91,7 @@ namespace octomap {
 
     /// Conversion from octomap::point3d to tf2::Point
     static inline geometry_msgs::msg::Point pointOctomapToTf(
-        const point3d &octomapPt) {        
+        const point3d &octomapPt) {
         geometry_msgs::msg::Point pt;
         pt.x = octomapPt.x();
         pt.y = octomapPt.y();
@@ -102,8 +103,13 @@ namespace octomap {
     static inline octomap::point3d pointTfToOctomap(
         const geometry_msgs::msg::Point& ptTf){
         return point3d(ptTf.x, ptTf.y, ptTf.z);
+    }    
+    
+    static inline octomap::point3d pointTfToOctomap(
+        const geometry_msgs::msg::Vector3& ptTf){
+        return point3d(ptTf.x, ptTf.y, ptTf.z);
     }
-
+    
     /// Conversion from octomap Quaternion to tf2::Quaternion
     static inline tf2::Quaternion quaternionOctomapToTf(
         const octomath::Quaternion& octomapQ){

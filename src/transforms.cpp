@@ -20,4 +20,21 @@ namespace pcl_ros {
         out_mat (1, 3) = origin.y();
         out_mat (2, 3) = origin.z();
     }
+
+    Eigen::Matrix4f transformAsMatrix(
+        const geometry_msgs::msg::TransformStamped &transform_stamped) {
+
+        auto t = transform_stamped.transform.translation;        
+        auto r = transform_stamped.transform.rotation;
+        tf2::Quaternion quaternion(r.x, r.y, r.z, r.w);
+        tf2::Vector3 translation(t.x, t.y, t.z);
+        
+        tf2::Transform transform;
+        transform.setOrigin(translation);
+        transform.setRotation(quaternion);
+
+        Eigen::Matrix4f out_mat;
+        transformAsMatrix(transform, out_mat);
+        return out_mat;        
+    }
 } // namespace pcl_ros

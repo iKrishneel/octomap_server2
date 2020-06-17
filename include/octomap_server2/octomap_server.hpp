@@ -10,6 +10,8 @@
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <std_msgs/msg/color_rgba.hpp>
 #include <geometry_msgs/msg/point.hpp>
+#include <geometry_msgs/msg/vector3.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <std_srvs/srv/empty.hpp>
@@ -31,6 +33,7 @@
 #include <tf2/buffer_core.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+#include <tf2_ros/create_timer_ros.h>
 #include <tf2_ros/message_filter.h>
 
 #include <octomap_msgs/conversions.h>
@@ -203,7 +206,7 @@ namespace octomap_server {
         virtual void publishAll(const rclcpp::Time &);
         
         virtual void insertScan(
-            const geometry_msgs::msg::Point& sensorOrigin,
+            const geometry_msgs::msg::Vector3  &sensorOrigin,
             const PCLPointCloud& ground,
             const PCLPointCloud& nonground);
 

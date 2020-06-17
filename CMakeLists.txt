@@ -22,14 +22,16 @@ find_package(PCL 1.11 REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(octomap REQUIRED)
 find_package(octomap_msgs REQUIRED)
-find_package(tf2_ros REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(tf2_msgs REQUIRED)
 
 link_directories(${PCL_LIBRARY_DIRS})
@@ -50,6 +52,8 @@ ament_target_dependencies(octomap_server2
   std_msgs
   nav_msgs
   visualization_msgs
+  geometry_msgs
+  std_srvs
   octomap
   octomap_msgs
   message_filters
@@ -58,7 +62,7 @@ ament_target_dependencies(octomap_server2
   tf2
   )
 
-target_link_libraries(octomap_server2 ${PCL_LIBRARIES})
+target_link_libraries(octomap_server2 ${PCL_LIBRARIES} ${OCTOMAP_LIBRARIES})
 
 rclcpp_components_register_node(octomap_server2
   PLUGIN "octomap_server::OctomapServer"
