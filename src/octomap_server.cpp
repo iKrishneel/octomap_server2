@@ -7,16 +7,15 @@ namespace octomap_server {
         const std::string node_name):
         Node(node_name, options),
         m_octree(NULL),
-        m_maxRange(-1),
-        // m_worldFrameId("/map"),
-        m_worldFrameId("livox_frame"),
+        m_maxRange(20),
+        m_worldFrameId("/map"),
         m_baseFrameId("base_footprint"),
         m_useHeightMap(true),
         m_useColoredMap(false),
         m_colorFactor(0.8),
         m_latchedTopics(true),
         m_publishFreeSpace(false),
-        m_res(0.3),
+        m_res(0.05),
         m_treeDepth(0),
         m_maxTreeDepth(0),
         m_pointcloudMinX(-std::numeric_limits<double>::max()),
@@ -167,6 +166,9 @@ namespace octomap_server {
                         "prepared as needed, will only be re-published on map change");
         }
 
+        RCLCPP_INFO(this->get_logger(), "Frame Id %s", m_worldFrameId.c_str());
+        RCLCPP_INFO(this->get_logger(), "Resolution %.2f", m_res);
+        
         this->onInit();
     }
 
@@ -439,7 +441,7 @@ namespace octomap_server {
         }
 
         auto start = std::chrono::steady_clock::now();
-                
+        
         // all other points: free on ray, occupied on endpoint:
         for (auto it = nonground.begin(); it != nonground.end(); ++it) {
             octomap::point3d point(it->x, it->y, it->z);
@@ -486,7 +488,7 @@ namespace octomap_server {
         auto end = std::chrono::steady_clock::now();
         std::chrono::duration<double> elapsed_seconds = end - start;
         RCLCPP_INFO(this->get_logger(), "Time lapse[insert] %f", elapsed_seconds.count());
-
+        
         // mark free cells only if not seen occupied in this cloud
         for(auto it = free_cells.begin(), end=free_cells.end();
             it!= end; ++it){
