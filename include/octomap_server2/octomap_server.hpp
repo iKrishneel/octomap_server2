@@ -142,8 +142,6 @@ namespace octomap_server {
 
         bool m_compressMap;
 
-        bool m_initConfig;
-
         // downprojected 2D map:
         bool m_incrementalUpdate;
         nav_msgs::msg::OccupancyGrid m_gridmap;

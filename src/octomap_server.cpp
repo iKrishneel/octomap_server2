@@ -34,8 +34,7 @@ namespace octomap_server {
         m_groundFilterAngle(0.15),
         m_groundFilterPlaneDistance(0.07),
         m_compressMap(true),
-        m_incrementalUpdate(false),
-        m_initConfig(true) {
+        m_incrementalUpdate(false) {
 
         rclcpp::Clock::SharedPtr clock = std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME);
         this->buffer_ = std::make_shared<tf2_ros::Buffer>(clock);
@@ -124,7 +123,6 @@ namespace octomap_server {
         }
 
         // initialize octomap object & params
-        // m_octree = new OcTreeT(m_res);
         m_octree = std::make_shared<OcTreeT>(m_res);
         m_octree->setProbHit(probHit);
         m_octree->setProbMiss(probMiss);
@@ -445,12 +443,13 @@ namespace octomap_server {
         // all other points: free on ray, occupied on endpoint:
         for (auto it = nonground.begin(); it != nonground.end(); ++it) {
             octomap::point3d point(it->x, it->y, it->z);
-            // maxrange check
+            // maxrange check            
             if ((m_maxRange < 0.0) || ((point - sensorOrigin).norm() <= m_maxRange)) {
                 // free cells
                 if (m_octree->computeRayKeys(sensorOrigin, point, m_keyRay)) {
                     free_cells.insert(m_keyRay.begin(), m_keyRay.end());
                 }
+
                 // occupied endpoint
                 octomap::OcTreeKey key;
                 if (m_octree->coordToKeyChecked(point, key)) {
@@ -471,9 +470,8 @@ namespace octomap_server {
                     (point - sensorOrigin).normalized() * m_maxRange;
                 if (m_octree->computeRayKeys(sensorOrigin, new_end, m_keyRay)) {
                     free_cells.insert(m_keyRay.begin(), m_keyRay.end());
-
                     octomap::OcTreeKey endKey;
-                    if (m_octree->coordToKeyChecked(new_end, endKey)){
+                    if (m_octree->coordToKeyChecked(new_end, endKey)) {
                         free_cells.insert(endKey);
                         updateMinKey(endKey, m_updateBBXMin);
                         updateMaxKey(endKey, m_updateBBXMax);
