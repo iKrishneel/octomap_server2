@@ -13,7 +13,6 @@ namespace octomap_server {
         m_useHeightMap(true),
         m_useColoredMap(false),
         m_colorFactor(0.8),
-        m_latchedTopics(true),
         m_publishFreeSpace(false),
         m_res(0.05),
         m_treeDepth(0),
@@ -152,17 +151,10 @@ namespace octomap_server {
         
         m_publishFreeSpace = this->declare_parameter(
             "publish_free_space", m_publishFreeSpace);
-        m_latchedTopics = this->declare_parameter("latch", m_latchedTopics);
 
-        if (m_latchedTopics) {
-            RCLCPP_INFO(this->get_logger(),
-                        std::string("Publishing latched (single publish will") +
-                        "take longer, all topics are prepared)");
-        } else {
-            RCLCPP_INFO(this->get_logger(),
-                        std::string("Publishing non-latched (topics are only") +
-                        "prepared as needed, will only be re-published on map change");
-        }
+        RCLCPP_INFO(this->get_logger(),
+                    std::string("Publishing non-latched (topics are only") +
+                    "prepared as needed, will only be re-published on map change");
 
         RCLCPP_INFO(this->get_logger(), "Frame Id %s", m_worldFrameId.c_str());
         RCLCPP_INFO(this->get_logger(), "Resolution %.2f", m_res);
@@ -556,16 +548,12 @@ namespace octomap_server {
         }
 
         bool publishFreeMarkerArray = m_publishFreeSpace &&
-            (m_latchedTopics || m_fmarkerPub->get_subscription_count()  > 0);
-        bool publishMarkerArray = (m_latchedTopics ||
-                                   m_markerPub->get_subscription_count() > 0);
-        bool publishPointCloud = (m_latchedTopics ||
-                                  m_pointCloudPub->get_subscription_count() > 0);
-        bool publishBinaryMap = (m_latchedTopics ||
-                                 m_binaryMapPub->get_subscription_count() > 0);
-        bool publishFullMap = (m_latchedTopics ||
-                               m_fullMapPub->get_subscription_count() > 0);
-        m_publish2DMap = (m_latchedTopics || m_mapPub->get_subscription_count() > 0);
+            m_fmarkerPub->get_subscription_count()  > 0;
+        bool publishMarkerArray = m_markerPub->get_subscription_count() > 0;
+        bool publishPointCloud = m_pointCloudPub->get_subscription_count() > 0;
+        bool publishBinaryMap = m_binaryMapPub->get_subscription_count() > 0;
+        bool publishFullMap = m_fullMapPub->get_subscription_count() > 0;
+        m_publish2DMap = m_mapPub->get_subscription_count() > 0;
 
         // init markers for free space:
         visualization_msgs::msg::MarkerArray freeNodesVis;

@@ -115,14 +115,10 @@ namespace octomap_server {
         std_msgs::msg::ColorRGBA m_color;
         std_msgs::msg::ColorRGBA m_colorFree;
         double m_colorFactor;
-
-        bool m_latchedTopics;
         bool m_publishFreeSpace;
-
         double m_res;
         unsigned m_treeDepth;
         unsigned m_maxTreeDepth;
-
         double m_pointcloudMinX;
         double m_pointcloudMaxX;
         double m_pointcloudMinY;
@@ -134,12 +130,10 @@ namespace octomap_server {
         double m_minSizeX;
         double m_minSizeY;
         bool m_filterSpeckles;
-
         bool m_filterGroundPlane;
         double m_groundFilterDistance;
         double m_groundFilterAngle;
         double m_groundFilterPlaneDistance;
-
         bool m_compressMap;
 
         // downprojected 2D map:
@@ -154,14 +148,16 @@ namespace octomap_server {
         
         inline static void updateMinKey(const octomap::OcTreeKey& in,
                                         octomap::OcTreeKey& min) {
-            for (unsigned i = 0; i < 3; ++i)
+            for (unsigned i = 0; i < 3; ++i) {
                 min[i] = std::min(in[i], min[i]);
+            }
         };
 
         inline static void updateMaxKey(const octomap::OcTreeKey& in,
                                         octomap::OcTreeKey& max) {
-            for (unsigned i = 0; i < 3; ++i)
+            for (unsigned i = 0; i < 3; ++i) {
                 max[i] = std::max(in[i], max[i]);
+            }
         };
         
         /// Test if key is within update area of map (2D, ignores height)
@@ -201,7 +197,6 @@ namespace octomap_server {
             const geometry_msgs::msg::Vector3  &sensorOrigin,
             const PCLPointCloud& ground,
             const PCLPointCloud& nonground);
-
 
         void filterGroundPlane(const PCLPointCloud& pc,
                                PCLPointCloud& ground,

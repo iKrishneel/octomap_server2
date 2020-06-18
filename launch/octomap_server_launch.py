@@ -19,7 +19,7 @@ def generate_launch_description():
               'height_map': True,
               'colored_map': True,
               'color_factor': 0.8,
-              'filter_ground': False,
+              'filter_ground': True,
               'filter_speckles': False,
               'ground_filter/distance': 0.04,
               'ground_filter/angle': 0.15,
