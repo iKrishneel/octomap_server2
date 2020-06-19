@@ -15,11 +15,11 @@ def generate_launch_description():
 
     params = {'resolution': 0.15,
               'frame_id': 'map',
-              'base_frame_id': 'map',
+              'base_frame_id': 'base_footprint',
               'height_map': True,
               'colored_map': True,
               'color_factor': 0.8,
-              'filter_ground': True,
+              'filter_ground': False,
               'filter_speckles': False,
               'ground_filter/distance': 0.04,
               'ground_filter/angle': 0.15,
