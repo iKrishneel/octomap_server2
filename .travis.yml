@@ -11,7 +11,7 @@ services:
 
 env:
   - DOCKER_IMG=osrf/ros2:nightly
-  - export REPO_NAME=${PWD##*/}
+  - REPO_NAME=${PWD##*/}
 
 before_install:
   - docker pull ${DOCKER_IMG}
