@@ -10,8 +10,9 @@ services:
   - docker
 
 env:
-  - DOCKER_IMG=osrf/ros2:nightly
-  - REPO_NAME=${PWD##*/}
+  global:
+    - DOCKER_IMG=osrf/ros2:nightly
+    - REPO_NAME=${PWD##*/}
 
 before_install:
   - docker pull ${DOCKER_IMG}
