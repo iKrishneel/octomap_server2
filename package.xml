@@ -20,6 +20,8 @@
   <build_depend>nav_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>pcl_conversions</build_depend>
+  <build_depend>pcl_msgs</build_depend>
+  <build_depend>octomap_msgs</build_depend>
 
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>launch_xml</exec_depend>
@@ -33,7 +35,9 @@
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>pcl_conversions</exec_depend>
-
+  <exec_depend>pcl_msgs</exec_depend>
+  <exec_depend>octomap_msgs</exec_depend>
+  
   <export>
     <build_type>ament_cmake</build_type>
   </export>
