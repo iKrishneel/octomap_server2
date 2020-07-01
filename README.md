@@ -1,5 +1,9 @@
-# OctoMap Server2
---- 
+<div align="center">
+  <h1>OctoMap Server2</h1>
+  <h3>Implementation of octomap for ROS2.0 </h3>
+    <a href="https://travis-ci.com/iKrishneel/octomap_server2"><img src="https://travis-ci.com/iKrishneel/octomap_server2.svg?branch=master"></a>
+</div>
+
 Port of the ROS1 [octomap server](https://github.com/OctoMap/octomap_mapping) for ROS2.0 
 
 #### Installation
