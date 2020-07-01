@@ -6,9 +6,6 @@ language: cpp
 compiler:
   - gcc
 
-services:
-  - docker
-
 env:
   global:
     - DOCKER_IMG=osrf/ros2:nightly
