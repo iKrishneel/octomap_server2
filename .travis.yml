@@ -11,9 +11,10 @@ services:
 
 env:
   - DOCKER_IMG=osrf/ros2:nightly
+  - export REPO_NAME=${PWD##*/}
 
 before_install:
   - docker pull ${DOCKER_IMG}
-  - docker images
-  - docker run -it --rm --name ros2 -v ${TRAVIS_BUILD_DIR}:/home/ros2/ ${DOCKER_IMG}
-  - docker ps
+
+install:
+  - docker run -it --rm --name ros2 -v ${TRAVIS_BUILD_DIR}:/home/ros2/ -e ${TRAVIS_BUILD_DIR} -e ${REPO_NAME} ${DOCKER_IMG} bash -c 'source .github/travis.sh'
