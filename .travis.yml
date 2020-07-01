@@ -17,6 +17,6 @@ before_install:
   - docker pull ${DOCKER_IMG}
 
 install:
-  - docker run -it --rm --name ros2 -v ${HOME}:${HOME} -e ${CI_SOURCE_DIR} -e ${REPO_NAME} ${DOCKER_IMG} bash -c 'cd ${CI_SOURCE_DIR};'
+  - docker run -it --rm --name ros2 -v ${HOME}:${HOME} ${DOCKER_IMG} bash -c 'cd ${CI_SOURCE_DIR};'
 
 #   - docker run -it --rm --name ros2 -v ${HOME}:${HOME} -e ${CI_SOURCE_DIR} -e ${REPO_NAME} ${DOCKER_IMG} bash -c 'cd ${CI_SOURCE_DIR}; source .github/travis.sh'
