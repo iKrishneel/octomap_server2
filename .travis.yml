@@ -13,11 +13,10 @@ env:
   global:
     - DOCKER_IMG=osrf/ros2:nightly
     - REPO_NAME=${PWD##*/}
+    - CI_SOURCE_DIR=$(pwd)
 
 before_install:
-  - echo `pwd`
-  - echo ls
   - docker pull ${DOCKER_IMG}
 
 install:
-  - docker run -it --rm --name ros2 -v ${TRAVIS_BUILD_DIR}:/home/ros2/ -e ${TRAVIS_BUILD_DIR} -e ${REPO_NAME} ${DOCKER_IMG} bash -c 'source .github/travis.sh'
+  - docker run -it --rm --name ros2 -v ${HOME}:${HOME} -e ${CI_SOURCE_DIR} -e ${REPO_NAME} ${DOCKER_IMG} bash -c 'source .github/travis.sh'

@@ -7,6 +7,11 @@ apt-get update && apt-get install -y \
 			  liboctomap-dev \
  			  libpcl-dev
 
+if [ -z ${CI_SOURCE_DIR} ];
+then
+    (cd ${CI_SOURCE_DIR}; git log --oneline | head -10)
+fi
+
 if [ -z ${REPO_NAME} ];
 then
     export REPO_NAME=octomap_server2
