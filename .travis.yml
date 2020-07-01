@@ -8,10 +8,11 @@ compiler:
 
 env:
   global:
-    - DOCKER_IMG=osrf/ros2:nightly
+    # - DOCKER_IMG=osrf/ros2:nightly
     - REPO_NAME=${PWD##*/}
 
 before_install:
+  - export DOCKER_IMG=osrf/ros2:nightly
   - export CI_SOURCE_PATH=$(pwd)
   - docker pull ${DOCKER_IMG}
 
