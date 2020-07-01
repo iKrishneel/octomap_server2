@@ -15,5 +15,6 @@ before_install:
 
 install:
   - export DOCKER_IMAGE=osrf/ros2:nightly
+  - export CI_SOURCE_PATH=$(pwd)
   - docker pull ${DOCKER_IMAGE}
   - docker run -v $HOME:$HOME -e CI_SOURCE_DIR $DOCKER_IMAGE bash -c 'cd $CI_SOURCE_DIR; source .github/travis.sh'
