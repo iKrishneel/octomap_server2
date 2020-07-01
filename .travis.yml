@@ -1,5 +1,8 @@
-sudo: false
-language: c++
+
+os: linux
+dist: bionic
+
+language: cpp
 compiler:
   - gcc
 
@@ -14,3 +17,5 @@ before_install:
   - docker images
   - docker run -d --rm --name ros2 -v ${TRAVIS_BUILD_DIR}:/home/ros2/ -p 6080:80 ${DOCKER_IMG}
   - docker ps
+  - docker exec -it ros2 /bin/sh -c "source /opt/ros/foxy/setup.bash; "
+
