@@ -1,0 +1,16 @@
+sudo: false
+language: c++
+compiler:
+  - gcc
+
+services:
+  - docker
+
+env:
+  - DOCKER_IMG=krishneel/vnc-ros2-foxy
+
+before_install:
+  - docker pull ${DOCKER_IMG}
+  - docker images
+  - docker run -d --rm --name ros2 -v ${TRAVIS_BUILD_DIR}:/home/ros2/ -p 6080:80 ${DOCKER_IMG}
+  - docker ps
