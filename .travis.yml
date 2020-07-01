@@ -13,9 +13,9 @@ env:
   global:
     - DOCKER_IMG=osrf/ros2:nightly
     - REPO_NAME=${PWD##*/}
-    - CI_SOURCE_DIR=$(pwd)
 
 before_install:
+  - export CI_SOURCE_PATH=$(pwd)
   - docker pull ${DOCKER_IMG}
 
 install:
