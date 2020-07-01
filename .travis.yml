@@ -8,12 +8,12 @@ compiler:
 
 env:
   global:
-    - DOCKER_IMAGE=osrf/ros2:nightly
     - REPO_NAME=${PWD##*/}
 
 before_install:
   - export CI_SOURCE_PATH=$(pwd)
 
 install:
+  - export DOCKER_IMAGE=osrf/ros2:nightly
   - docker pull ${DOCKER_IMAGE}
   - docker run -it --rm --name ros2 -v ${HOME}:${HOME} -e ${CI_SOURCE_DIR} -e ${REPO_NAME} ${DOCKER_IMAGE} bash -c 'cd ${CI_SOURCE_DIR}; source .github/travis.sh'
