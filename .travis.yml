@@ -5,8 +5,9 @@ language: generic
 
 install:
   - export REPO_NAME=${PWD##*/}
-  # - export DOCKER_IMAGE=osrf/ros2:nightly
+  - export DOCKER_IMAGE=osrf/ros2:nightly
   - export CI_SOURCE_PATH=$(pwd)
-  - docker pull ${DOCKER_IMAGE}
+  # - docker pull ${DOCKER_IMAGE}
   - echo $CI_SOURCE_PATH
+  
   # - docker run -v $HOME:$HOME -e CI_SOURCE_DIR -e HOME -e REPO_NAME $DOCKER_IMAGE bash -c 'cd $CI_SOURCE_DIR; source .github/travis.sh'
