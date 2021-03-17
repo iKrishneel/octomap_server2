@@ -44,7 +44,6 @@ jobs:
         
     - name: Cloning ROS Deps
       run: |
-        echo "Repository Name ${{ github.event.repository.name }}"
         cd ${ROS_WORKSPACE}/src/${{ github.event.repository.name }}
         vcs import . < deps.repos
         cd ${ROS_WORKSPACE}
@@ -59,19 +58,8 @@ jobs:
       with:
         target-ros2-distro: ${{ env.ROS_DISTRO }}
         package-name: backhoe_ros_pkg
-        colcon-defaults: |
-          {
-              "build": {
-                "symlink-install": true,
-                "event-handlers": "console_direct+"
-              }
-          }
-      
-    # - name: Installing ROS
-    #   run: |
-    #     sudo apt-get install -y ros-${{ env.ROS_DISTRO }}-desktop python3-colcon-* \
-    #     octomap-tools libflann-dev libpcl-dev libboost-all-dev libeigen-stl-containers-dev \
-    #     libqhull-dev libccd-dev ros-${{ env.ROS_DISTRO }}-ament-cmake-ros
+        colcon-mixin-name: coverage-gcc
+        colcon-mixin-repository: https://raw.githubusercontent.com/colcon/colcon-mixin-repository/1ddb69bedfd1f04c2f000e95452f7c24a4d6176b/index.yaml
       
     # - name: Build workspace
     #   run: |
