@@ -69,4 +69,4 @@ jobs:
         echo `pwd`
         ls
       
-        colcon build --symlink-install --event-handlers console_direct+
+        colcon build --symlink-install --event-handlers console_direct+ --packages-select octomap_msgs
