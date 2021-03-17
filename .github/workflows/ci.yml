@@ -54,11 +54,18 @@ jobs:
       with:
         required-ros-distributions: ${{ env.ROS_DISTRO }}
 
-    # - name: Building
-    #   uses: ros-tooling/action-ros-ci@v0.1
-    #   with:
-    #     target-ros2-distro: ${{ env.ROS_DISTRO }}
-    #     package-name: backhoe_ros_pkg
+    - name: Building
+      uses: ros-tooling/action-ros-ci@v0.1
+      with:
+        target-ros2-distro: ${{ env.ROS_DISTRO }}
+        package-name: backhoe_ros_pkg
+        colcon-defaults: |
+          {
+              "build": {
+                "symlink-install": true,
+                "event-handlers": "console_direct+"
+              }
+          }
       
     # - name: Installing ROS
     #   run: |
