@@ -55,11 +55,16 @@ jobs:
 
     - name: Build workspace
       run: |
-        sudo apt update && sudo apt-get  install locales -y
+        sudo apt update && sudo apt-get install locales -y
         sudo locale-gen en_US en_US.UTF-8
         sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
         export LANG=en_US.UTF-8
-        
+
+        sudo apt-get update && sudo apt-get install -y \
+        libflann-dev \
+        liboctomap-dev \
+        libpcl-dev
+      
         cd ${{ env.ROS_WORKSPACE }}/
         echo "WORKSPACE: ${{ env.ROS_WORKSPACE }}"
 
