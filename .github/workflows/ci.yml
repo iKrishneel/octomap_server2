@@ -28,6 +28,7 @@ jobs:
         export DOCKER_IMAGE=osrf/ros2:nightly
         export CI_SOURCE_PATH=$(pwd)
         export REPO_NAME=${{ github.event.repository.name }}
+        export HOME=$GITHUB_WORKSPACE
 
         docker run -v $HOME:$HOME -e CI_SOURCE_PATH -e $REPO_NAME -e HOME $DOCKER_IMAGE bash -c 'cd $CI_SOURCE_PATH; source .github/travis.sh'
     
