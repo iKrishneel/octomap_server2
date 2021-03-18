@@ -41,32 +41,39 @@ jobs:
       run: |
         mkdir -p $ROS_WORKSPACE/src
         ln -s $GITHUB_WORKSPACE $ROS_WORKSPACE/src
+
+        ls $ROS_WORKSPACE
+        ls $ROS_WORKSPACE/src
         
     - name: Cloning ROS Deps
       run: |
         cd ${ROS_WORKSPACE}/src/${{ github.event.repository.name }}
         vcs import . < deps.repos
         cd ${ROS_WORKSPACE}
-        
-    - name: Setup ROS
-      uses: ros-tooling/setup-ros@v0.1
-      with:
-        required-ros-distributions: ${{ env.ROS_DISTRO }}
 
-    - name: Build workspace
-      run: |
-        sudo apt update
-        sudo apt-get install -y locales libflann-dev liboctomap-dev libpcl-dev
+        ls $ROS_WORKSPACE
+        ls $ROS_WORKSPACE/src
 
-        sudo locale-gen en_US en_US.UTF-8
-        sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
-        export LANG=en_US.UTF-8
       
-        cd ${{ env.ROS_WORKSPACE }}/
-        echo "WORKSPACE: ${{ env.ROS_WORKSPACE }}"
+    # - name: Setup ROS
+    #   uses: ros-tooling/setup-ros@v0.1
+    #   with:
+    #     required-ros-distributions: ${{ env.ROS_DISTRO }}
 
-        source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
-        echo `pwd`
-        ls
+    # - name: Build workspace
+    #   run: |
+    #     sudo apt update
+    #     sudo apt-get install -y locales libflann-dev liboctomap-dev libpcl-dev
+
+    #     sudo locale-gen en_US en_US.UTF-8
+    #     sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+    #     export LANG=en_US.UTF-8
       
-        colcon build --symlink-install --event-handlers console_direct+ --packages-select octomap_msgs
+    #     cd ${{ env.ROS_WORKSPACE }}/
+    #     echo "WORKSPACE: ${{ env.ROS_WORKSPACE }}"
+
+    #     source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
+    #     echo `pwd`
+    #     ls
+      
+    #     colcon build --symlink-install --event-handlers console_direct+ --packages-select octomap_msgs
