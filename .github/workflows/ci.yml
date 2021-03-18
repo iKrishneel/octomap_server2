@@ -40,7 +40,10 @@ jobs:
     - name: Setup workspace
       run: |
         vcs import . < deps.repos
-      
+
+        ls
+        ls ..
+        
     # - name: Setup ROS
     #   uses: ros-tooling/setup-ros@v0.1
     #   with:
