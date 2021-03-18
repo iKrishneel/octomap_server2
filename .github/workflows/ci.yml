@@ -23,44 +23,52 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-
-    - name: Update Environment Vars
+    - name: Using Docker
       run: |
-        echo "ROS_WORKSPACE=$GITHUB_WORKSPACE/$ROS_VERSION/$ROS_DISTRO" >> $GITHUB_ENV
+        export DOCKER_IMAGE=osrf/ros2:nightly
+        export CI_SOURCE_PATH=$(pwd)
+        export REPO_NAME=${{ github.event.repository.name }}
 
-    - name: Install build dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install vcstool black flake8
+        docker run -v $HOME:$HOME -e CI_SOURCE_PATH -e $REPO_NAME -e HOME $DOCKER_IMAGE bash -c 'cd $CI_SOURCE_PATH; source .github/travis.sh'
+    
+    # - name: Set up Python
+    #   uses: actions/setup-python@v2
+    #   with:
+    #     python-version: '3.8'
 
-    - name: Setup workspace
-      run: |
-        vcs import . < deps.repos
+    # - name: Update Environment Vars
+    #   run: |
+    #     echo "ROS_WORKSPACE=$GITHUB_WORKSPACE/$ROS_VERSION/$ROS_DISTRO" >> $GITHUB_ENV
+
+    # - name: Install build dependencies
+    #   run: |
+    #     python -m pip install --upgrade pip
+    #     pip install vcstool black flake8
+
+    # - name: Setup workspace
+    #   run: |
+    #     vcs import . < deps.repos
         
-    - name: Setup ROS
-      uses: ros-tooling/setup-ros@v0.1
-      with:
-        required-ros-distributions: ${{ env.ROS_DISTRO }}
+    # - name: Setup ROS
+    #   uses: ros-tooling/setup-ros@v0.1
+    #   with:
+    #     required-ros-distributions: ${{ env.ROS_DISTRO }}
 
-    - name: Build workspace
-      run: |
-        sudo apt update
-        sudo apt-get install -y locales libflann-dev liboctomap-dev libpcl-dev
+    # - name: Build workspace
+    #   run: |
+    #     sudo apt update
+    #     sudo apt-get install -y locales libflann-dev liboctomap-dev libpcl-dev
 
-        sudo locale-gen en_US en_US.UTF-8
-        sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
-        export LANG=en_US.UTF-8
+    #     sudo locale-gen en_US en_US.UTF-8
+    #     sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+    #     export LANG=en_US.UTF-8
       
-        cd ../../..
+    #     cd ../../..
 
-        ls /opt/ros/${{ env.ROS_DISTRO }}/
+    #     ls /opt/ros/${{ env.ROS_DISTRO }}/
 
-        source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
-        echo `pwd`
-        ls
+    #     source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
+    #     echo `pwd`
+    #     ls
       
-        colcon build --symlink-install --event-handlers console_direct+
+    #     colcon build --symlink-install --event-handlers console_direct+
