@@ -40,20 +40,20 @@ jobs:
     - name: Setup workspace
       run: |
         mkdir -p $ROS_WORKSPACE/src
-        cp -r $GITHUB_WORKSPACE/ $ROS_WORKSPACE/src
+        # ln -s $GITHUB_WORKSPACE/ $ROS_WORKSPACE/src
 
         ls $GITHUB_WORKSPACE
         ls $ROS_WORKSPACE
         ls $ROS_WORKSPACE/src
         
-    - name: Cloning ROS Deps
-      run: |
-        cd ${ROS_WORKSPACE}/src/${{ github.event.repository.name }}
-        vcs import . < deps.repos
-        cd ${ROS_WORKSPACE}
+    # - name: Cloning ROS Deps
+    #   run: |
+    #     cd ${ROS_WORKSPACE}/src/${{ github.event.repository.name }}
+    #     vcs import . < deps.repos
+    #     cd ${ROS_WORKSPACE}
 
-        ls $ROS_WORKSPACE
-        ls $ROS_WORKSPACE/src
+    #     ls $ROS_WORKSPACE
+    #     ls $ROS_WORKSPACE/src
 
       
     # - name: Setup ROS
