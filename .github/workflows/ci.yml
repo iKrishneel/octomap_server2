@@ -40,7 +40,7 @@ jobs:
     - name: Setup workspace
       run: |
         mkdir -p $ROS_WORKSPACE/src
-        ln -s $GITHUB_WORKSPACE $ROS_WORKSPACE/src
+        ln -s $GITHUB_WORKSPACE/${{ github.event.repository.name }} $ROS_WORKSPACE/src
 
         ls $ROS_WORKSPACE
         ls $ROS_WORKSPACE/src
