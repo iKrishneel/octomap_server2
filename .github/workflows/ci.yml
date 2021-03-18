@@ -25,7 +25,7 @@ jobs:
 
     - name: Using Docker
       run: |
-        export DOCKER_IMAGE=osrf/ros2:nightly
+        export DOCKER_IMAGE=krishneel/ros2-foxy:latest
         export CI_SOURCE_PATH=$(pwd)
         export REPO_NAME=${{ github.event.repository.name }}
         export HOME=$GITHUB_WORKSPACE
