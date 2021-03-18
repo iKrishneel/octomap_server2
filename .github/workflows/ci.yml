@@ -40,29 +40,25 @@ jobs:
     - name: Setup workspace
       run: |
         vcs import . < deps.repos
-
-        ls
-        ls ..
         
-    # - name: Setup ROS
-    #   uses: ros-tooling/setup-ros@v0.1
-    #   with:
-    #     required-ros-distributions: ${{ env.ROS_DISTRO }}
+    - name: Setup ROS
+      uses: ros-tooling/setup-ros@v0.1
+      with:
+        required-ros-distributions: ${{ env.ROS_DISTRO }}
 
-    # - name: Build workspace
-    #   run: |
-    #     sudo apt update
-    #     sudo apt-get install -y locales libflann-dev liboctomap-dev libpcl-dev
+    - name: Build workspace
+      run: |
+        sudo apt update
+        sudo apt-get install -y locales libflann-dev liboctomap-dev libpcl-dev
 
-    #     sudo locale-gen en_US en_US.UTF-8
-    #     sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
-    #     export LANG=en_US.UTF-8
+        sudo locale-gen en_US en_US.UTF-8
+        sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+        export LANG=en_US.UTF-8
       
-    #     cd ${{ env.ROS_WORKSPACE }}/
-    #     echo "WORKSPACE: ${{ env.ROS_WORKSPACE }}"
+        cd ../..
 
-    #     source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
-    #     echo `pwd`
-    #     ls
+        source /opt/ros/${{ env.ROS_DISTRO }}/setup.bash
+        echo `pwd`
+        ls
       
-    #     colcon build --symlink-install --event-handlers console_direct+ --packages-select octomap_msgs
+        colcon build --symlink-install --event-handlers console_direct+
