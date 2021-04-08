@@ -81,7 +81,8 @@ namespace octomap_server {
         m_groundFilterPlaneDistance = this->declare_parameter(
             "ground_filter/plane_distance", m_groundFilterPlaneDistance);
 
-        this->declare_parameter("sensor_model/max_range", m_maxRange);
+        m_maxRange = this->declare_parameter(
+            "sensor_model/max_range", m_maxRange);
 
         m_res = this->declare_parameter("resolution", m_res);
         double probHit = this->declare_parameter("sensor_model/hit", 0.7);
