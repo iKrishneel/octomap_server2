@@ -1,22 +1,18 @@
 cmake_minimum_required(VERSION 3.5)
 project(octomap_server2)
 
-# Default to C99
-if(NOT CMAKE_C_STANDARD)
-  set(CMAKE_C_STANDARD 99)
-endif()
-
-# Default to C++14
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
-
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+add_definitions("-Wall")
+add_definitions("-Wextra")
+add_definitions("-Wpedantic")
+add_definitions("-g")
+add_definitions("-O3") # because normal release is just -O2
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+
 find_package(rclcpp_components REQUIRED)
 find_package(PCL 1.7 REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -33,15 +29,36 @@ find_package(octomap_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_msgs REQUIRED)
+find_package(laser_geometry REQUIRED)
 
-link_directories(${PCL_LIBRARY_DIRS})
-include_directories(${PCL_INCLUDE_DIRS})
-include_directories(include)
+# include include
+include_directories(
+  include
+  ${rclcpp_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
+  )
+
+## --------------------------------------------------------------
+## |                     Octomap conversions                    |
+## --------------------------------------------------------------
+
+add_library(OctomapConversions SHARED
+  src/conversions.cpp
+  )
+
+ament_target_dependencies(OctomapConversions
+  rclcpp
+  )
+
+ament_export_libraries(OctomapConversions)
+
+## --------------------------------------------------------------
+## |                       Octomap server                       |
+## --------------------------------------------------------------
 
 add_library(octomap_server2 SHARED
   src/octomap_server.cpp
   src/transforms.cpp
-  src/conversions.cpp
   )
 
 ament_target_dependencies(octomap_server2
@@ -60,6 +77,7 @@ ament_target_dependencies(octomap_server2
   tf2_ros
   tf2_msgs
   tf2
+  laser_geometry
   )
 
 target_link_libraries(octomap_server2 ${PCL_LIBRARIES} ${OCTOMAP_LIBRARIES})
@@ -68,14 +86,41 @@ rclcpp_components_register_node(octomap_server2
   PLUGIN "octomap_server::OctomapServer"
   EXECUTABLE octomap_server)
 
-install(TARGETS
+## --------------------------------------------------------------
+## |                           install                          |
+## --------------------------------------------------------------
+
+# executables
+install(
+  TARGETS
+  octomap_server
+  DESTINATION lib/${PROJECT_NAME}
+  )
+
+# libraries
+ament_export_include_directories(include)
+install(
+  TARGETS
+  OctomapConversions
   octomap_server2
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin)
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
+  )
 
 install(DIRECTORY
   launch
+  DESTINATION share/${PROJECT_NAME}/
+  )
+
+install(DIRECTORY
+  config
+  DESTINATION share/${PROJECT_NAME}/
+  )
+
+install(DIRECTORY
+  rviz
   DESTINATION share/${PROJECT_NAME}/
   )
 
