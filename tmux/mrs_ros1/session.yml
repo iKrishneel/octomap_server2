@@ -1,0 +1,61 @@
+name: bridge
+root: ./
+startup_window: bridge
+pre_window: export UAV_NAME=uav1; export RUN_TYPE=simulation; export UAV_TYPE=t650; export WORLD_NAME=simulation; export SENSORS="garmin_down"
+# pre_window: 
+windows:
+  - roscore:
+      layout: tiled
+      panes:
+        - r1; roscore
+  - gazebo:
+      layout: tiled
+      panes:
+        - r1; waitForRos; roslaunch mrs_simulation simulation.launch world_name:=forest gui:=true
+        - r1; waitForOdometry; gz camera -c gzclient_camera -f uav1; history -s gz camera -c gzclient_camera -f uav1
+  - status:
+      layout: tiled
+      panes:
+        - r1; waitForSimulation; roslaunch mrs_uav_status status.launch
+  - spawn:
+      layout: tiled
+      panes:
+        - r1; waitForSimulation; rosservice call /mrs_drone_spawner/spawn "1 $UAV_TYPE --enable-rangefinder --enable-rplidar"
+  - control:
+      layout: tiled
+      panes:
+        - r1; waitForOdometry; roslaunch mrs_uav_general core.launch
+  - takeoff:
+      layout: tiled
+      panes:
+        - r1; waitForSimulation; roslaunch mrs_uav_general automatic_start.launch
+        - 'r1; waitForControl;
+          rosservice call /$UAV_NAME/mavros/cmd/arming 1;
+          sleep 2;
+          rosservice call /$UAV_NAME/mavros/set_mode 0 offboard'
+  - ros2shit:
+      layout: tiled
+      panes:
+        - r2; ros2 launch octomap_server2 uav_rplidar_launch.py use_sim_time:=true
+  - goto:
+      layout: tiled
+      panes:
+        - 'r1; history -s rosservice call /$UAV_NAME/control_manager/goto \"goal: \[0.0, 10.0, 1.5, 0.0\]\"'
+  - rviz:
+      layout: tiled
+      panes:
+        - r2; ros2 launch octomap_server2 rviz_launch.py
+        - r1; waitForControl; roslaunch mrs_rviz_plugins load_robot.launch
+  - easy_control:
+      layout: tiled
+      panes:
+        - r1; waitForControl; waitForControl; roslaunch mrs_uav_general logitech_joystick.launch
+        - r1; waitForControl; waitForControl; roslaunch mrs_rviz_plugins rviz_interface.launch
+  - layout:
+      layout: tiled
+      panes:
+        - r1; waitForControl; sleep 3; ~/.i3/layout_manager.sh ./layout.json
+  - ros2bridge:
+      layout: tiled
+      panes:
+        - r1; waitForRos; ~/git/uav_core/installation/ros2/03_run_ros_bridge.sh
