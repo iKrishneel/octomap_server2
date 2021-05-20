@@ -82,7 +82,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /uav1/control_interface/local_odom
+        Value: /ssrc_fog_x/control_interface/local_odom
       Value: true
     - Class: rviz_default_plugins/Axes
       Enabled: true
@@ -120,7 +120,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Best Effort
-        Value: /uav1/rplidar/scan
+        Value: /ssrc_fog_x/rplidar/scan
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -142,13 +142,13 @@ Visualization Manager:
       Enabled: true
       Name: ControlWaypoints
       Namespaces:
-        uav1/debug/waypoints: true
+        ssrc_fog_x/debug/waypoints: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /uav1/control_interface/debug/waypoint_markers
+        Value: /ssrc_fog_x/control_interface/debug/waypoint_markers
       Value: true
     - Class: rviz_common/Group
       Displays:
@@ -162,7 +162,7 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /uav1/navigation/binary_tree_markers_out
+            Value: /ssrc_fog_x/navigation/binary_tree_markers_out
           Value: true
         - Class: rviz_default_plugins/Marker
           Enabled: true
@@ -174,7 +174,7 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /uav1/navigation/goal_markers_out
+            Value: /ssrc_fog_x/navigation/goal_markers_out
           Value: true
         - Class: rviz_default_plugins/Marker
           Enabled: true
@@ -186,7 +186,7 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /uav1/navigation/path_markers_out
+            Value: /ssrc_fog_x/navigation/path_markers_out
           Value: true
         - Class: rviz_default_plugins/Marker
           Enabled: true
@@ -198,7 +198,7 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /uav1/navigation/expansion_markers_out
+            Value: /ssrc_fog_x/navigation/expansion_markers_out
           Value: true
       Enabled: true
       Name: Navigation
@@ -215,13 +215,13 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Best Effort
-            Value: /uav1/octomap_server/projected_map
+            Value: /ssrc_fog_x/octomap_server/projected_map
           Update Topic:
             Depth: 5
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /uav1/octomap_server/projected_map_updates
+            Value: /ssrc_fog_x/octomap_server/projected_map_updates
           Use Timestamp: false
           Value: true
         - Alpha: 1
@@ -253,7 +253,7 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /uav1/octomap_server/octomap_point_cloud_centers
+            Value: /ssrc_fog_x/octomap_server/octomap_point_cloud_centers
           Use Fixed Frame: true
           Use rainbow: true
           Value: true

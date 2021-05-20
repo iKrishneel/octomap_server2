@@ -16,13 +16,13 @@ def generate_launch_description():
     pkg_name = "octomap_server2"
     pkg_share_path = get_package_share_directory(package_name=pkg_name)
 
-    UAV_NAME=os.getenv('UAV_NAME')
+    DRONE_DEVICE_ID=os.getenv('DRONE_DEVICE_ID')
 
     ld.add_action(launch.actions.DeclareLaunchArgument("debug", default_value="false"))
     ld.add_action(launch.actions.DeclareLaunchArgument("use_sim_time", default_value="false"))
     dbg_sub = launch.substitutions.PythonExpression(['"" if "false" == "', launch.substitutions.LaunchConfiguration("debug"), '" else "debug_ros2launch ' + os.ttyname(sys.stdout.fileno()) + '"'])
 
-    namespace=UAV_NAME
+    namespace=DRONE_DEVICE_ID
 
     ld.add_action(ComposableNodeContainer(
         namespace='',
