@@ -1,5 +1,5 @@
 resolution: 0.20
-frame_id: "stable_origin"
+frame_id: "world"
 compress_map: true
 update_free_space_using_missing_data: true
 
