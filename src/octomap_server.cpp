@@ -27,6 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <eigen3/Eigen/Core>
 #include <octomap_server2/octomap_server.hpp>
 
 namespace ph = std::placeholders;
