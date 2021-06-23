@@ -110,10 +110,12 @@ namespace octomap_server {
         octomap::OcTreeKey m_updateBBXMin;
         octomap::OcTreeKey m_updateBBXMax;
 
+        bool m_useHeightMap;
+        bool m_useColoredMap;
+
         double m_maxRange;
         std::string m_worldFrameId; // the map frame
         std::string m_baseFrameId; // base of the robot for ground plane filtering
-        bool m_useHeightMap;
         std_msgs::msg::ColorRGBA m_color;
         std_msgs::msg::ColorRGBA m_colorFree;
         double m_colorFactor;
@@ -146,7 +148,6 @@ namespace octomap_server {
         octomap::OcTreeKey m_paddedMinKey;
         unsigned m_multires2DScale;
         bool m_projectCompleteMap;
-        bool m_useColoredMap;
 
         // input/output octomap file
         std::string m_inputOctFile;
@@ -212,8 +213,8 @@ namespace octomap_server {
 
         virtual void handlePreNodeTraversal(const rclcpp::Time &);
         virtual void handlePostNodeTraversal(const rclcpp::Time &);
-        virtual void handleNode(const OcTreeT::iterator& it) {};
-        virtual void handleNodeInBBX(const OcTreeT::iterator& it) {};
+        virtual void handleNode(const OcTreeT::iterator& it);
+        virtual void handleNodeInBBX(const OcTreeT::iterator& it);
         virtual void handleOccupiedNode(const OcTreeT::iterator& it);
         virtual void handleOccupiedNodeInBBX(const OcTreeT::iterator& it);
         virtual void handleFreeNode(const OcTreeT::iterator& it);
@@ -244,7 +245,7 @@ namespace octomap_server {
         bool resetSrv(
             const std::shared_ptr<std_srvs::srv::Empty::Request>,
             std::shared_ptr<std_srvs::srv::Empty::Response>);
-        bool OctomapServer::saveMapSrv(
+        bool saveMapSrv(
             const std::shared_ptr<std_srvs::srv::Trigger::Request>,
             std::shared_ptr<std_srvs::srv::Trigger::Response>);
 

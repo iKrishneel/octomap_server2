@@ -171,9 +171,7 @@ namespace octomap_server {
         if (m_inputOctFile.length() > 0) {
             RCLCPP_INFO(this->get_logger(),
                         "Input Octomap file provided: %s", m_inputOctFile.c_str());
-
-            success = this->openFile(m_inputOctFile);
-            if (!success)
+            if (!this->openFile(m_inputOctFile))
                 RCLCPP_WARN(this->get_logger(),
                             "Open input Octomap file failed!");
         }
@@ -907,28 +905,40 @@ namespace octomap_server {
                     "Received save Octomap request");
 
         if (m_outputOctFile.length() <= 3)
-            RCLCPP_ERROR(this->get_logger(),
-                         "Output file name %s not valid", m_outputOctFile.c_str());
+            std::string err_msg = "Output file name %s not valid", m_outputOctFile.c_str();
+            RCLCPP_ERROR(this->get_logger(), err_msg);
+            resp->success = false;
+            resp->message = err_msg
             return false;
 
         std::string suffix = m_outputOctFile.substr(m_outputOctFile.length()-3, 3);
         if (suffix== ".bt"){ // write to binary file:
-            if (!m_octree->writeBinary(mapname)){
-                ROS_ERROR("Error writing to file %s", m_outputOctFile.c_str());
-                return false
+            if (!m_octree->writeBinary(m_outputOctFile)){
+                std::string err_msg = "Error writing to file %s", m_outputOctFile.c_str();
+                RCLCPP_ERROR(this->get_logger(), err_msg);
+                resp->success = false;
+                resp->message = err_msg;
+                return false;
             }
         } else if (suffix == ".ot"){ // write to full .ot file:
-            if (!m_octree->write(mapname)){
-                ROS_ERROR("Error writing to file %s", m_outputOctFile.c_str());
-                return false
+            if (!m_octree->write(m_outputOctFile)){
+                std::string err_msg = "Error writing to file %s", m_outputOctFile.c_str();
+                RCLCPP_ERROR("Error writing to file %s", m_outputOctFile.c_str());
+                resp->success = false;
+                resp->message = err_msg;
+                return false;
             }
         } else{
-            ROS_ERROR("Octomap output file extension, must be either .bt or .ot");
-            return false
+            std::string err_msg = "Octomap output file extension, must be either .bt or .ot";
+            RCLCPP_ERROR("Octomap output file extension, must be either .bt or .ot");
+            resp->success = false;
+            resp->message = err_msg;
+            return false;
         }
 
         RCLCPP_INFO(this->get_logger(), "Save Octomap succeed");
-        return true
+        resp->success = true;
+        return true;
     }
 
     void OctomapServer::publishBinaryOctoMap(
