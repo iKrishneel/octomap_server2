@@ -905,34 +905,30 @@ namespace octomap_server {
                     "Received save Octomap request");
 
         if (m_outputOctFile.length() <= 3)
-            std::string err_msg = "Output file name %s not valid", m_outputOctFile.c_str();
-            RCLCPP_ERROR(this->get_logger(), err_msg);
+            RCLCPP_ERROR(this->get_logger(),
+                         "Output file name %s not valid", m_outputOctFile.c_str());
             resp->success = false;
-            resp->message = err_msg
             return false;
 
         std::string suffix = m_outputOctFile.substr(m_outputOctFile.length()-3, 3);
-        if (suffix== ".bt"){ // write to binary file:
+        if (suffix == ".bt"){ // write to binary file:
             if (!m_octree->writeBinary(m_outputOctFile)){
-                std::string err_msg = "Error writing to file %s", m_outputOctFile.c_str();
-                RCLCPP_ERROR(this->get_logger(), err_msg);
+                RCLCPP_ERROR(this->get_logger(),
+                             "Error writing to file %s", m_outputOctFile.c_str());
                 resp->success = false;
-                resp->message = err_msg;
                 return false;
             }
         } else if (suffix == ".ot"){ // write to full .ot file:
             if (!m_octree->write(m_outputOctFile)){
-                std::string err_msg = "Error writing to file %s", m_outputOctFile.c_str();
-                RCLCPP_ERROR("Error writing to file %s", m_outputOctFile.c_str());
+                RCLCPP_ERROR(this->get_logger(),
+                             "Error writing to file %s", m_outputOctFile.c_str());
                 resp->success = false;
-                resp->message = err_msg;
                 return false;
             }
         } else{
-            std::string err_msg = "Octomap output file extension, must be either .bt or .ot";
-            RCLCPP_ERROR("Octomap output file extension, must be either .bt or .ot");
+            RCLCPP_ERROR(this->get_logger(),
+                         "Octomap output file extension, must be either .bt or .ot");
             resp->success = false;
-            resp->message = err_msg;
             return false;
         }
 
