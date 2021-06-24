@@ -26,6 +26,8 @@ def generate_launch_description():
               'ground_filter/plane_distance': 0.07,
               'compress_map': True,
               'incremental_2D_projection': False,
+              'input_octomap_file': '',
+              'output_octomap_file': '',
               'sensor_model/max_range': -1.0,
               'sensor_model/hit': 0.7,
               'sensor_model/miss': 0.4,
