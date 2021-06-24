@@ -907,11 +907,13 @@ namespace octomap_server {
         RCLCPP_INFO(this->get_logger(),
                     "Received save Octomap request");
 
-        if (m_outputOctFile.length() <= 3)
+        if (m_outputOctFile.length() <= 3) {
             RCLCPP_ERROR(this->get_logger(),
-                         "Output file name %s not valid", m_outputOctFile.c_str());
+                         "Output file name %s not valid",
+                         m_outputOctFile.c_str());
             resp->success = false;
             return false;
+        }
 
         std::string suffix = m_outputOctFile.substr(m_outputOctFile.length()-3, 3);
         if (suffix == ".bt"){ // write to binary file:
