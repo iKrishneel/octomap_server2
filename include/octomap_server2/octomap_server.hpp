@@ -216,8 +216,8 @@ namespace octomap_server {
 
         virtual void handlePreNodeTraversal(const rclcpp::Time &);
         virtual void handlePostNodeTraversal(const rclcpp::Time &);
-        virtual void handleNode(const OcTreeT::iterator& it);
-        virtual void handleNodeInBBX(const OcTreeT::iterator& it);
+        virtual void handleNode(const OcTreeT::iterator& it) {};
+        virtual void handleNodeInBBX(const OcTreeT::iterator& it) {};
         virtual void handleOccupiedNode(const OcTreeT::iterator& it);
         virtual void handleOccupiedNodeInBBX(const OcTreeT::iterator& it);
         virtual void handleFreeNode(const OcTreeT::iterator& it);
