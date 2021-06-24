@@ -234,6 +234,9 @@ namespace octomap_server {
             std::bind(&OctomapServer::clearBBXSrv, this, ph::_1, ph::_2));
         this->m_resetService = this->create_service<std_srvs::srv::Empty>(
             "reset", std::bind(&OctomapServer::resetSrv, this, ph::_1, ph::_2));
+        this->m_saveMapService = this->create_service<std_srvs::srv::Trigger>(
+            "save_octomap",
+            std::bind(&OctomapServer::saveMapSrv, this, ph::_1, ph::_2));
 
         RCLCPP_INFO(this->get_logger(), "Setup completed!");
     }
