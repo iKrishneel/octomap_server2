@@ -98,13 +98,13 @@ namespace octomap_server {
             std::string msg = "You enabled ground filtering but incoming pointclouds " +
                 std::string("will be pre-filtered in [%ld, %ld], excluding the") +
                 std::string("ground level z=0 This will not work.");
-            RCLCPP_WARN(this->get_logger(), msg, m_pointcloudMinZ, m_pointcloudMaxZ);
+            RCLCPP_WARN(this->get_logger(), msg.c_str(), m_pointcloudMinZ, m_pointcloudMaxZ);
         }
 
         if (m_useHeightMap && m_useColoredMap) {
             std::string msg = std::string("You enabled both height map and RGB") +
                 "color registration. This is contradictory. Defaulting to height map."; 
-            RCLCPP_WARN(this->get_logger(), msg);
+            RCLCPP_WARN(this->get_logger(), msg.c_str());
             m_useColoredMap = false;
         }
 
@@ -118,7 +118,7 @@ namespace octomap_server {
                 " - node not running/compiled to support colors, " +
                 "please define COLOR_OCTOMAP_SERVER and recompile or launch " +
                 "the octomap_color_server node";
-            RCLCPP_WARN(this->get_logger(), msg);
+            RCLCPP_WARN(this->get_logger(), msg.c_str());
 #endif
         }
 
@@ -152,10 +152,9 @@ namespace octomap_server {
         
         m_publishFreeSpace = this->declare_parameter(
             "publish_free_space", m_publishFreeSpace);
-
-        RCLCPP_INFO(this->get_logger(),
-                    std::string("Publishing non-latched (topics are only") +
-                    "prepared as needed, will only be re-published on map change");
+        std::string msg = std::string("Publishing non-latched (topics are only)") +
+                    "prepared as needed, will only be re-published on map change";
+        RCLCPP_INFO(this->get_logger(), msg.c_str());
 
         RCLCPP_INFO(this->get_logger(), "Frame Id %s", m_worldFrameId.c_str());
         RCLCPP_INFO(this->get_logger(), "Resolution %.2f", m_res);
@@ -1152,8 +1151,8 @@ namespace octomap_server {
                 if (max_idx  >= m_gridmap.data.size()) {
                     RCLCPP_ERROR(
                         this->get_logger(),
-                        std::string("BBX index not valid:")  +
-                        "%d (max index %zu for size %d x %d) update-BBX is: " +
+                        std::string("BBX index not valid:").c_str(),
+                        "%d (max index %zu for size %d x %d) update-BBX is: ",
                         "[%zu %zu]-[%zu %zu]",
                         max_idx, m_gridmap.data.size(), m_gridmap.info.width,
                         m_gridmap.info.height, mapUpdateBBXMinX,
