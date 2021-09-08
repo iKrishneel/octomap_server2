@@ -190,7 +190,7 @@ namespace octomap_server {
     void OctomapServer::subscribe() {
         this->m_pointCloudSub = std::make_shared<
             message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(
-                this, "cloud_in");
+                this, "cloud_in", rmw_qos_profile_sensor_data);
 
         auto create_timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
             this->get_node_base_interface(),
