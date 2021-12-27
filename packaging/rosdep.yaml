@@ -1,0 +1,4 @@
+fog_msgs:
+    ubuntu: ros-ROS_DISTRO-fog-msgs=0.0.8*
+dynamicEDT3D:
+    ubuntu: ros-ROS_DISTRO-dynamic-edt-3d
