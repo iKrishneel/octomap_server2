@@ -26,6 +26,11 @@ RUN echo "deb [trusted=yes] https://ssrc.jfrog.io/artifactory/ssrc-debian-public
 
 RUN mkdir -p /$PACKAGE_NAME/packaging
 
+# Workaround for rosdep issue with libpcl-dev install
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+    libpcl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY packaging/rosdep.yaml* packaging/rosdep.sh packaging/build_deps.sh /$PACKAGE_NAME/packaging/
 COPY underlay.repos package.xml /$PACKAGE_NAME/packaging/
 COPY entrypoint.sh* /$PACKAGE_NAME/
