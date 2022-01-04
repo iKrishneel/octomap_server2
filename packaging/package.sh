@@ -10,6 +10,8 @@ Params:
     -h  Show help text.
     -b  Build number. This will be tha last digit of version string (x.x.N).
     -d  Distribution string in debian changelog.
+    -g  Git commit hash.
+    -v  Git version string
 "
 	exit 0
 }
@@ -31,10 +33,10 @@ mod_dir="$(realpath $(dirname $0)/..)"
 build_nbr=0
 distr=""
 version=""
-git_commit_hash="$(git rev-parse HEAD)"
-git_version_string="$(git log --date=format:%Y%m%d --pretty=~git%cd.%h -n 1)"
+git_commit_hash=""
+git_version_string=""
 
-while getopts "hb:d:" opt
+while getopts "hb:d:g:v:" opt
 do
 	case $opt in
 		h)
@@ -46,11 +48,24 @@ do
 		d)
 			check_arg $OPTARG && distr=$OPTARG || error_arg $opt
 			;;
+                g)
+                        check_arg $OPTARG && git_commit_hash=$OPTARG || error_arg $opt
+                        ;;
+                v)
+                        check_arg $OPTARG && git_version_string=$OPTARG || error_arg $opt
+                        ;;
 		\?)
 			usage
 			;;
 	esac
 done
+
+if [[ "$git_commit_hash" == "0" || -z "$git_commit_hash" ]]; then
+        git_commit_hash="$(git rev-parse HEAD)"
+fi
+if [[ "$git_version_string" == "0" || -z "$git_version_string" ]]; then
+        git_version_string="$(git log --date=format:%Y%m%d --pretty=~git%cd.%h -n 1)"
+fi
 
 ## Remove trailing '/' mark in module dir, if exists
 mod_dir=$(echo $mod_dir | sed 's/\/$//')
