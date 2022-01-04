@@ -128,7 +128,7 @@ OctomapServer::OctomapServer(const rclcpp::NodeOptions& options, const std::stri
 
   if (m_useHeightMap && m_useColoredMap) {
     std::string msg = std::string("You enabled both height map and RGBcolor registration.") + " This is contradictory. " + "Defaulting to height map.";
-    RCLCPP_WARN(this->get_logger(), msg);
+    RCLCPP_WARN(this->get_logger(), msg.c_str());
     m_useColoredMap = false;
   }
 
@@ -138,14 +138,14 @@ OctomapServer::OctomapServer(const rclcpp::NodeOptions& options, const std::stri
 #else
     std::string msg = std::string("Colored map requested in launch file") + " - node not running/compiled to support colors, " +
                       "please define COLOR_OCTOMAP_SERVER and recompile or launch " + "the octomap_color_server node";
-    RCLCPP_WARN(this->get_logger(), msg);
+    RCLCPP_WARN(this->get_logger(), msg.c_str());
 #endif
   }
 
   if (m_updateFreeSpaceUsingMissingData && m_maxRange < 0.0) {
     std::string msg = std::string("You enabled updating free space using missing data in measurements. ") +
                       "However, the maximal sensor range is not limited. " + "Disabling this feature.";
-    RCLCPP_WARN(this->get_logger(), msg);
+    RCLCPP_WARN(this->get_logger(), msg.c_str());
     m_updateFreeSpaceUsingMissingData = false;
   }
 
@@ -153,7 +153,7 @@ OctomapServer::OctomapServer(const rclcpp::NodeOptions& options, const std::stri
     std::string msg = std::string("You enabled using only the local map. ") +
                       "However, the local distance for the map is lower than the maximal sensor range. " +
                       "Defaulting the local distance for the map to the maximal sensor range.";
-    RCLCPP_WARN(this->get_logger(), msg);
+    RCLCPP_WARN(this->get_logger(), msg.c_str());
     m_localMapDistance = m_maxRange;
   }
 
@@ -162,7 +162,7 @@ OctomapServer::OctomapServer(const rclcpp::NodeOptions& options, const std::stri
 
   if (!loaded_successfully) {
     const std::string str = "Could not load all non-optional parameters. Shutting down.";
-    RCLCPP_ERROR(this->get_logger(), str);
+    RCLCPP_ERROR(this->get_logger(), str.c_str());
     rclcpp::shutdown();
     return;
   }
@@ -946,7 +946,7 @@ bool OctomapServer::clearOutsideBBX(const octomap::point3d& p_min, const octomap
     m_octree->deleteNode(k.first, k.second);
   }
 
-  RCLCPP_INFO(this->get_logger(), "Number of voxels removed outside local area: %i", keys.size());
+  RCLCPP_INFO(this->get_logger(), "Number of voxels removed outside local area: %li", keys.size());
   return true;
 }
 
@@ -1093,7 +1093,7 @@ void OctomapServer::handlePreNodeTraversal(const rclcpp::Time& rostime) {
       // test for max idx:
       auto max_idx = m_gridmap.info.width * mapUpdateBBXMaxY + mapUpdateBBXMaxX;
       if (max_idx >= m_gridmap.data.size()) {
-        RCLCPP_ERROR(this->get_logger(), std::string("BBX index not valid:") + "%d (max index %zu for size %d x %d) update-BBX is: " + "[%zu %zu]-[%zu %zu]",
+        RCLCPP_ERROR(this->get_logger(), "BBX index not valid: %d (max index %zu for size %d x %d) update-BBX is: [%u %u]-[%u %u]",
                      max_idx, m_gridmap.data.size(), m_gridmap.info.width, m_gridmap.info.height, mapUpdateBBXMinX, mapUpdateBBXMinY, mapUpdateBBXMaxX,
                      mapUpdateBBXMaxY);
       }
@@ -1330,7 +1330,8 @@ template bool OctomapServer::parse_param<double>(const std::string& param_name, 
 template bool OctomapServer::parse_param<float>(const std::string& param_name, float& param_dest);
 template bool OctomapServer::parse_param<std::string>(const std::string& param_name, std::string& param_dest);
 template bool OctomapServer::parse_param<bool>(const std::string& param_name, bool& param_dest);
-template bool OctomapServer::parse_param<unsigned int>(const std::string& param_name, unsigned int& param_dest);
+// Unsigned int is never used, nor supported as ParameterType. Therefore removed.
+//template bool OctomapServer::parse_param<unsigned int>(const std::string& param_name, unsigned int& param_dest);
 //}
 
 }  // namespace octomap_server
