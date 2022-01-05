@@ -9,6 +9,9 @@ on:
 jobs:
   tii-deb-build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ros2_distro: [foxy, galactic]
     steps:
 
       - name: Checkout octomap_server2
@@ -16,25 +19,23 @@ jobs:
         with:
           path: octomap_server2
 
-      - name: Checkout ci-scripts
-        uses: actions/checkout@v2
-        with:
-          repository: tiiuae/fogsw-ci-scripts
-          path: fogsw-ci-scripts
-
       # Run docker build
       - name: Run octomap_server2 docker build
+        env:
+          ROS: 1
+          ROS_DISTRO: ${{ matrix.ros2_distro }}
+          PACKAGE_NAME: octomap_server2
         run: |
           set -eux
           mkdir bin
-          pushd fogsw-ci-scripts
-          ./generate_deb.sh ../octomap_server2 ../bin/
+          pushd octomap_server2
+          ./build.sh ../bin/
           popd
 
       - name: Install jfrog CLI tool
         env:
-          JFROG_CLI_URL: https://artifactory.ssrc.fi/artifactory/gen-public-local/tools/jfrog/jfrog-1.45.2.tar.gz
-        if: github.event_name == 'push'
+          JFROG_CLI_URL: https://ssrc.jfrog.io/artifactory/ssrc-gen-public-remote-cache/tools/jfrog/jfrog-1.45.2.tar.gz
+        if: github.event_name == 'push' || github.event.action == 'rebuild'
         run: |
           set -exu
           mkdir -p "$GITHUB_WORKSPACE/.jfrog/bin"
@@ -52,12 +53,12 @@ jobs:
           ARCHITECTURE: amd64
           BUILD_NAME: octomap-server2
           CI: true
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event.action == 'rebuild'
         run: |
           set -exu
           jfrog rt c import "$ARTIFACTORY_TOKEN"
           jfrog rt ping
-          pkg=$(find bin -name 'ros-foxy-octomap-server2*.deb')
+          pkg=$(find bin -name 'ros-${{ matrix.ros2_distro }}-octomap-server2*.deb')
           jfrog rt u --deb "$DISTRIBUTION/$COMPONENT/$ARCHITECTURE" \
                      --target-props COMMIT="$GITHUB_SHA" \
                      --build-name "$BUILD_NAME" \
@@ -68,14 +69,3 @@ jobs:
           jfrog rt bpr "$BUILD_NAME" "$GITHUB_SHA" "$ARTIFACTORY_REPO" \
                        --status dev \
                        --comment "development build"
-
-      - name: trigger fog-drone build
-        env:
-          USER: ${{ secrets.DISPATCH_USER }}
-          TOKEN: ${{ secrets.DISPATCH_TOKEN }}
-        if: github.event_name == 'push'
-        run: |
-          curl -X POST https://api.github.com/repos/tiiuae/dronsole-containers/dispatches \
-               -H 'Accept: application/vnd.github.everest-preview+json' \
-               -u $USER:$TOKEN \
-               --data '{"event_type": "rebuild-fog-drone", "client_payload": { "repository": "'"$GITHUB_REPOSITORY"'" }}'
