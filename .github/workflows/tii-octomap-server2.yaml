@@ -56,8 +56,8 @@ jobs:
         if: github.event_name == 'push'
         with:
           registry: ghcr.io
-          username: ${{ secrets.GCR_PACKAGES_USER }}
-          password: ${{ secrets.GCR_PACKAGES_TOKEN }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build tii-octomap-server2 image and push
         uses: docker/build-push-action@v2
