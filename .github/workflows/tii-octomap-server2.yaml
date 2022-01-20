@@ -66,6 +66,7 @@ jobs:
           file: ./Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             PACKAGE_NAME=octomap_server2
             ROS_DISTRO=foxy
