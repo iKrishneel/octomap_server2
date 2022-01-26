@@ -15,6 +15,7 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
     fakeroot \
     dh-make \
     libboost-dev \
+    ros-${ROS_DISTRO}-rmw-fastrtps-cpp \
     && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd -g $GID builder && \

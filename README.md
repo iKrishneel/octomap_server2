@@ -3,7 +3,7 @@ Port of the ROS1 [octomap server](https://github.com/OctoMap/octomap_mapping) fo
 #### Installation
 1.  Firstly make sure you have [octomap](https://github.com/OctoMap/octomap.git) installed on your system 
   ```bash
-  sudo apt-get install ros-foxy-octomap ros-foxy-octomap-msgs
+  sudo apt-get install ros-galactic-octomap ros-galactic-octomap-msgs
   ```
 
 2.  Next, clone this ros package to the appropriate ros2 workspace

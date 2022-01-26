@@ -10,7 +10,7 @@ git_version_string=${3:-$(git log --date=format:%Y%m%d --pretty=~git%cd.%h -n 1)
 
 build_number=${GITHUB_RUN_NUMBER:=0}
 
-ros_distro=${ROS_DISTRO:=foxy}
+ros_distro=${ROS_DISTRO:=galactic}
 
 iname=${PACKAGE_NAME:=octomap_server2}
 
