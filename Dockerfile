@@ -27,5 +27,7 @@ RUN sed --in-place \
         chmod +x /$PACKAGE_NAME/entrypoint.sh
 
 ENV PACKAGE_NAME $PACKAGE_NAME
+ENV RMW_IMPLEMENTATION rmw_fastrtps_cpp
+
 WORKDIR /$PACKAGE_NAME
 ENTRYPOINT "/"$PACKAGE_NAME"/entrypoint.sh"

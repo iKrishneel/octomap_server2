@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ros2_distro: [foxy, galactic]
+        ros2_distro: [galactic]
     steps:
 
       - name: Checkout octomap_server2

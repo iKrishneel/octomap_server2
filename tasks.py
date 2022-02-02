@@ -50,7 +50,7 @@ def clone(c):
           'pull': "always attempt to pull a newer version of the image",
           'ros_distro': "ROS distro to use (Available [foxy, galactic])"}
 )
-def build_env(c, nocache=False, pull=False, ros_distro="foxy", image_name=MODULE_NAME):
+def build_env(c, nocache=False, pull=False, ros_distro="galactic", image_name=MODULE_NAME):
     """
     Create Docker build environment.
     """
@@ -90,7 +90,7 @@ def clean(c, reallyclean=False):
     help={'out_dir': "output directory for the generated deb files",
           'ros_distro': "ROS distro to use (Available [foxy, galactic])"}
 )
-def create_deb_package(c, out_dir="../bin/", ros_distro="foxy", image_name=MODULE_NAME):
+def create_deb_package(c, out_dir="../bin/", ros_distro="galactic", image_name=MODULE_NAME):
     """
     Build debian package
     """
@@ -103,7 +103,7 @@ def create_deb_package(c, out_dir="../bin/", ros_distro="foxy", image_name=MODUL
           'ros_distro': "ROS distro to use (Available [foxy, galactic])",
           'image_name': "name of output docker image"}
 )
-def build_docker(c, nocache=False, pull=False, ros_distro="foxy", image_name=MODULE_NAME):
+def build_docker(c, nocache=False, pull=False, ros_distro="galactic", image_name=MODULE_NAME):
     """
     Build Docker image of this component
     """

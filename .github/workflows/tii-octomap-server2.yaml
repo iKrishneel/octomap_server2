@@ -38,7 +38,7 @@ jobs:
           tags: localhost:5000/tiiuae/octomap_server2:build_env
           build-args: |
             PACKAGE_NAME=octomap_server2
-            ROS_DISTRO=foxy
+            ROS_DISTRO=galactic
 
       - name: Docker meta
         id: meta
@@ -69,5 +69,5 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             PACKAGE_NAME=octomap_server2
-            ROS_DISTRO=foxy
+            ROS_DISTRO=galactic
             FROM_IMAGE=localhost:5000/tiiuae/octomap_server2:build_env
