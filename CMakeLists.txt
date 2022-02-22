@@ -14,13 +14,14 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 
 find_package(rclcpp_components REQUIRED)
-find_package(PCL 1.7 REQUIRED)
+find_package(PCL REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(pcl_ros REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(octomap REQUIRED)
@@ -29,6 +30,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_msgs REQUIRED)
 find_package(laser_geometry REQUIRED)
+find_package(fog_lib REQUIRED)
 
 find_package(Eigen3 REQUIRED)
 set(Eigen_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIRS})
@@ -60,12 +62,12 @@ ament_export_libraries(OctomapConversions)
 
 add_library(octomap_server2 SHARED
   src/octomap_server.cpp
-  src/transforms.cpp
   )
 
 ament_target_dependencies(octomap_server2
   rclcpp
   PCL
+  pcl_ros
   pcl_conversions
   sensor_msgs
   std_msgs
@@ -80,6 +82,7 @@ ament_target_dependencies(octomap_server2
   tf2_msgs
   tf2
   laser_geometry
+  fog_lib
   )
 
 target_link_libraries(octomap_server2 ${EIGEN3_LIBRARIES} ${PCL_LIBRARIES} ${OCTOMAP_LIBRARIES})
