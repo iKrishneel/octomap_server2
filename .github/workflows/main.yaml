@@ -32,39 +32,30 @@ jobs:
           ./build.sh ../bin/
           popd
 
-      - name: Install jfrog CLI tool
+      - uses: jfrog/setup-jfrog-cli@v2
         env:
-          JFROG_CLI_URL: https://ssrc.jfrog.io/artifactory/ssrc-gen-public-remote-cache/tools/jfrog/jfrog-1.45.2.tar.gz
-        if: github.event_name == 'push' || github.event.action == 'rebuild'
-        run: |
-          set -exu
-          mkdir -p "$GITHUB_WORKSPACE/.jfrog/bin"
-          curl -L "$JFROG_CLI_URL" -o "$GITHUB_WORKSPACE/.jfrog/jfrog.tar.gz"
-          tar -C "$GITHUB_WORKSPACE/.jfrog/bin" -zxf "$GITHUB_WORKSPACE/.jfrog/jfrog.tar.gz"
-          echo "$GITHUB_WORKSPACE/.jfrog/bin" >> "$GITHUB_PATH"
-          echo "JFROG_CLI_HOME_DIR=$GITHUB_WORKSPACE/.jfrog" >> "$GITHUB_ENV"
+          JF_ARTIFACTORY_1: ${{ secrets.ARTIFACTORY_TOKEN }}
 
       - name: Upload to Artifactory
         env:
-          ARTIFACTORY_TOKEN: ${{ secrets.ARTIFACTORY_TOKEN }}
           ARTIFACTORY_REPO: debian-public-local
           DISTRIBUTION: focal
           COMPONENT: fog-sw
           ARCHITECTURE: amd64
           BUILD_NAME: octomap-server2
           CI: true
-        if: github.event_name == 'push' || github.event.action == 'rebuild'
+        if: github.event_name == 'push'
         run: |
           set -exu
-          jfrog rt c import "$ARTIFACTORY_TOKEN"
           jfrog rt ping
           pkg=$(find bin -name 'ros-${{ matrix.ros2_distro }}-octomap-server2*.deb')
+          pkg_name=$(basename $pkg)
           jfrog rt u --deb "$DISTRIBUTION/$COMPONENT/$ARCHITECTURE" \
                      --target-props COMMIT="$GITHUB_SHA" \
                      --build-name "$BUILD_NAME" \
                      --build-number "$GITHUB_SHA" \
                      "$pkg" \
-                     "$ARTIFACTORY_REPO"
+                     "$ARTIFACTORY_REPO/$pkg_name"
           jfrog rt build-publish "$BUILD_NAME" "$GITHUB_SHA"
           jfrog rt bpr "$BUILD_NAME" "$GITHUB_SHA" "$ARTIFACTORY_REPO" \
                        --status dev \
