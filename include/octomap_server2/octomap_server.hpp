@@ -140,7 +140,7 @@ class OctomapServer : public rclcpp::Node {
 
 public:
   OctomapServer(rclcpp::NodeOptions options);
-  bool callbackResetMap(std_srvs::srv::Empty::Request& req, std_srvs::srv::Empty::Response& resp);
+  bool callbackResetMap(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response> response);
 
   void callback3dLidarCloud2(const sensor_msgs::msg::PointCloud2::UniquePtr msg, const SensorType_t sensor_type, const int sensor_id);
   void callbackLaserScan(const sensor_msgs::msg::LaserScan::UniquePtr msg);
@@ -178,11 +178,11 @@ private:
   rclcpp::TimerBase::SharedPtr timer_local_map_;
   void                         timerLocalMap();
 
-  rclcpp::TimerBase::SharedPtr timer_persistency_;
-  void                         timerPersistency();
+  /* rclcpp::TimerBase::SharedPtr timer_persistency_; */
+  /* void                         timerPersistency(); */
 
-  rclcpp::TimerBase::SharedPtr timer_altitude_alignment_;
-  void                         timerAltitudeAlignment();
+  /* rclcpp::TimerBase::SharedPtr timer_altitude_alignment_; */
+  /* void                         timerAltitudeAlignment(); */
 
   // | ----------------------- parameters ----------------------- |
 

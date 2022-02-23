@@ -31,23 +31,7 @@ def generate_launch_description():
         name=namespace+'_octomap_server',
         package='rclcpp_components',
         executable='component_container_mt',
-        # executable='component_container',
         composable_node_descriptions=[
-            # scan -> cloud
-            # ComposableNode(
-            #     namespace=namespace,
-            #     name='laserscan_to_pointcloud',
-            #     package='pointcloud_to_laserscan',
-            #     plugin='pointcloud_to_laserscan::LaserScanToPointCloudNode',
-            #     remappings=[
-            #         # subscribers
-            #         ('scan_in', 'rplidar/scan'),
-            #         # publishers
-            #         ('cloud', 'rplidar/cloud'),
-            #     ],
-            #     parameters=[{"use_sim_time": launch.substitutions.LaunchConfiguration("use_sim_time")},],
-            # ),
-            # octomap_server
             ComposableNode(
                 namespace=namespace,
                 name='octomap_server',
@@ -56,24 +40,19 @@ def generate_launch_description():
                 remappings=[
                     # subscribers
                     # ('cloud_in', 'rplidar/cloud'),
-                    ('laser_scan_in', 'rplidar/scan'),
+                    ('laser_scan_in', '~/rplidar/scan'),
                     # publishers
-                    ('octomap_binary_out', '~/octomap_binary'),
-                    ('octomap_full_out', '~/octomap_full'),
-                    ('occupied_cells_vis_array_out', '~/occupied_cells_vis_array'),
-                    ('free_cells_vis_array_out', '~/free_cells_vis_array_out'),
-                    ('octomap_point_cloud_centers_out', '~/octomap_point_cloud_centers'),
-                    ('octomap_free_centers_out', '~/octomap_free_centers_out'),
-                    ('projected_map_out', '~/projected_map'),
+                    ('octomap_global_binary_out', '~/octomap/global/binary'),
+                    ('octomap_global_full_out', '~/octomap/global/full'),
+                    ('octomap_local_binary_out', '~/octomap/local/binary'),
+                    ('octomap_local_full_out', '~/octomap/local/full'),
                     # service servers
-                    ('octomap_binary', '~/octomap_binary'),
-                    ('octomap_full', '~/octomap_full'),
-                    ('clear_bbx', '~/clear_bbx'),
                     ('reset', '~/reset'),
                 ],
                 parameters=[
                     pkg_share_path + '/config/params.yaml',
-                    {"frame_id": "world"},
+                    {"world_frame_id": "world"},
+                    {"robot_frame_id": str(DRONE_DEVICE_ID) + "/fcu"},
                     {"use_sim_time": launch.substitutions.LaunchConfiguration("use_sim_time")},
                 ],
             ),

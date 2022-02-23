@@ -1,49 +1,161 @@
-resolution: 0.20
-frame_id: "stable_origin"
-compress_map: true
-update_free_space_using_missing_data: true
+map_while_grounded: true
 
-sensor_model:
-  max_range: 10.0  #set to -1.0 for unlimited range
-  min_range: 0.4
-  hit: 0.9
-  miss: 0.4
-  min: 0.3
-  max: 0.9
+mapping:
 
-filter_speckles: false
-ground_filter:
-  enable: true
-  distance: 0.6
+  # resolution on the lowest level (fractor = 0, depth = max depth)
+  resolution: 0.05 # [m]
 
-local_mapping:
-  enable: true
-  distance: 10.0
+  # fractor = how many levels from the lowest level (the higherst res)
+  #           should we work on
+  # current_resolution = resolution * 2 ^ fractor
+  initial_fractor: 3
 
-visualization:
-  occupancy_min_z: -1.79769e+308
-  occupancy_max_z: 1.79769e+308
+persistency:
 
-  colored_map: 
+  enabled: false
+
+  map_name: "default"
+
+  # save mapevery "n" seconds, will be save only when flying_normally == true
+  save_time: 10.0 # [s]
+
+  # automatically aligns altitude after start
+  align_altitude:
+
     enabled: false
 
-  height_map: 
-    enabled: true
-    color_factor: 0.8
-    color:
-      r: 1.0
-      g: 0.0
-      b: 0.0
-      a: 1.0
+    ground_detection_distance: 2.0 # [m]
 
-  publish_free_space: true
-  color_free:
-    r: 0.0
-    g: 1.0
-    b: 0.0
-    a: 1.0
+    # how high is the fcu fram above the ground when sitting on the ground
+    robot_height: 0.3 # [m]
+
+global_map:
+
+  # the publisher rate of the full map
+  rate: 1.0 # [Hz]
+
+  # should we prune the map before publishing?
+  compress: true
+
+  publish_full: false # should publish map with full probabilities?
+  publish_binary: true # should publish map with binary occupancy?
+
+local_map:
+
+  # should create a local map from the global map?
+  enabled: true
+
+  # the bounding box distance of the local map
+  horizontal_distance: 50.0
+  vertical_distance: 50.0
+
+  # the publisher rate of the local map
+  rate: 10.0 # [Hz]
+
+  max_computation_duty_cycle: 0.33
+
+  publish_full: false # should publish map with full probabilities?
+  publish_binary: true # should publish map with binary occupancy?
+
+unknown_rays:
+
+  update_free_space: true
+  clear_occupied: false # beware, setting this to true is very dangerous
+  ray_distance: 15.0
+
+# for point cloud raycasting
+sensor_params:
+
+  3d_lidar:
+
+    n_sensors: 0
+
+    # sensor_0:
+
+    #   max_range: 20.0 # [m]
+
+    #   vertical_fov_angle: deg(90.0)
+    #   vertical_rays: 64
+    #   horizontal_rays: 64
+
+  depth_camera:
+
+    n_sensors: 0
+
+    # sensor_0:
+
+    #   max_range: 9.0 # [m]
+
+    #   horizontal_fov_angle: deg(70.0)
+    #   vertical_fov_angle: deg(35.0)
+    #   horizontal_rays: 80
+    #   vertical_rays: 45
+
+  2d_lidar:
+
+    n_sensors: 0
+
+    # sensor_0:
+
+    #   max_range: 9.0 # [m]
+
+    #   horizontal_rays: 40
+
+sensor_model:
+
+  hit: 0.95  # [0, 1]
+  miss: 0.45 # [0, 1]
+  min: 0.3  # [0, 1]
+  max: 0.7  # [0, 1]
+
+  ##############################################
+
+# resolution: 0.20
+# frame_id: "stable_origin"
+# compress_map: true
+# update_free_space_using_missing_data: true
+
+# sensor_model:
+#   max_range: 10.0  #set to -1.0 for unlimited range
+#   min_range: 0.4
+#   hit: 0.9
+#   miss: 0.4
+#   min: 0.3
+#   max: 0.9
+
+# filter_speckles: false
+# ground_filter:
+#   enable: true
+#   distance: 0.6
+
+# local_mapping:
+#   enable: true
+#   distance: 10.0
+
+# visualization:
+#   occupancy_min_z: -1.79769e+308
+#   occupancy_max_z: 1.79769e+308
+
+#   colored_map: 
+#     enabled: false
+
+#   height_map: 
+#     enabled: true
+#     color_factor: 0.8
+#     color:
+#       r: 1.0
+#       g: 0.0
+#       b: 0.0
+#       a: 1.0
+
+#   publish_free_space: true
+#   color_free:
+#     r: 0.0
+#     g: 1.0
+#     b: 0.0
+#     a: 1.0
   
-  downprojected_2D_map:
-    incremental_projection: false
-    min_x_size: 30.0
-    min_y_size: 30.0
+#   downprojected_2D_map:
+#     incremental_projection: false
+#     min_x_size: 30.0
+#     min_y_size: 30.0
