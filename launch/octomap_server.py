@@ -40,14 +40,14 @@ def generate_launch_description():
                 remappings=[
                     # subscribers
                     # ('cloud_in', 'rplidar/cloud'),
-                    ('laser_scan_in', '~/rplidar/scan'),
+                    ('laser_scan_in', '/' + str(DRONE_DEVICE_ID) + '/rplidar/scan'),
                     # publishers
                     ('octomap_global_binary_out', '~/octomap/global/binary'),
                     ('octomap_global_full_out', '~/octomap/global/full'),
                     ('octomap_local_binary_out', '~/octomap/local/binary'),
                     ('octomap_local_full_out', '~/octomap/local/full'),
                     # service servers
-                    ('reset', '~/reset'),
+                    ('reset_map_in', '~/reset'),
                 ],
                 parameters=[
                     pkg_share_path + '/config/params.yaml',

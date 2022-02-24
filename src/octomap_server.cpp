@@ -194,7 +194,7 @@ OctomapServer::OctomapServer(rclcpp::NodeOptions options) : Node("octomap_server
   octree_local_->setProbMiss(_probMiss_);
   octree_local_->setClampingThresMin(_thresMin_);
   octree_local_->setClampingThresMax(_thresMax_);
-    
+
   octree_initialized_ = true;
 
   //}
@@ -274,11 +274,12 @@ OctomapServer::OctomapServer(rclcpp::NodeOptions options) : Node("octomap_server
 
   timer_global_map_ = create_wall_timer(std::chrono::duration<double>(1.0 / _global_map_rate_), std::bind(&OctomapServer::timerGlobalMap, this), new_cbk_grp());
 
-/*   if (_local_map_enabled_) { */
-/*     timer_local_map_ = create_wall_timer(std::chrono::duration<double>(1.0 / _local_map_rate_), std::bind(&OctomapServer::timerLocalMap, this), new_cbk_grp()); */
-/*   } */
+  /*   if (_local_map_enabled_) { */
+  /*     timer_local_map_ = create_wall_timer(std::chrono::duration<double>(1.0 / _local_map_rate_), std::bind(&OctomapServer::timerLocalMap, this),
+   * new_cbk_grp()); */
+  /*   } */
 
-/*   time_last_local_map_processing_ = (1.0 / _local_map_rate_) * _local_map_max_computation_duty_cycle_; */
+  /*   time_last_local_map_processing_ = (1.0 / _local_map_rate_) * _local_map_max_computation_duty_cycle_; */
 
   is_initialized_ = true;
   RCLCPP_INFO(get_logger(), "[OctomapServer]: Initialized");
@@ -322,7 +323,7 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
       /* } */
     }
   }
-      
+
   RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1.0, "[OctomapServer]: callbackLaserScan()");
 
   PCLPointCloud::Ptr pc              = boost::make_shared<PCLPointCloud>();
@@ -332,7 +333,7 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
   geometry_msgs::msg::TransformStamped sensorToWorldTf;
 
   try {
-    auto res = tf_buffer_->lookupTransform(_world_frame_, msg->header.frame_id, msg->header.stamp);
+    auto res = tf_buffer_->lookupTransform(_world_frame_, msg->header.frame_id, rclcpp::Time(0));
     pcl_ros::transformAsMatrix(res, sensorToWorld);
   }
   catch (...) {
@@ -432,7 +433,7 @@ void OctomapServer::callback3dLidarCloud2(const sensor_msgs::msg::PointCloud2::U
   Eigen::Matrix4f                      sensorToWorld;
   geometry_msgs::msg::TransformStamped sensorToWorldTf;
   try {
-    sensorToWorldTf = tf_buffer_->lookupTransform(_world_frame_, msg->header.frame_id, msg->header.stamp);
+    sensorToWorldTf = tf_buffer_->lookupTransform(_world_frame_, msg->header.frame_id, rclcpp::Time(0));
     pcl_ros::transformAsMatrix(sensorToWorldTf, sensorToWorld);
   }
   catch (...) {
@@ -1245,7 +1246,7 @@ bool OctomapServer::createLocalMap(const std::string frame_id, const double hori
 
   geometry_msgs::msg::TransformStamped sensorToWorldTf;
   try {
-    sensorToWorldTf = tf_buffer_->lookupTransform(_world_frame_, frame_id, get_clock()->now());
+    sensorToWorldTf = tf_buffer_->lookupTransform(_world_frame_, frame_id, rclcpp::Time(0));
   }
   catch (...) {
     RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1.0, "[OctomapServer]: createLocalMap(): could not find tf from %s to %s", frame_id.c_str(),
