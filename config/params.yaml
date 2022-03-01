@@ -3,12 +3,12 @@ map_while_grounded: true
 mapping:
 
   # resolution on the lowest level (fractor = 0, depth = max depth)
-  resolution: 0.05 # [m]
+  resolution: 0.2 # [m]
 
   # fractor = how many levels from the lowest level (the higherst res)
   #           should we work on
   # current_resolution = resolution * 2 ^ fractor
-  initial_fractor: 3
+  initial_fractor: 1
 
 persistency:
 
@@ -37,8 +37,8 @@ global_map:
   # should we prune the map before publishing?
   compress: true
 
-  publish_full: false # should publish map with full probabilities?
-  publish_binary: true # should publish map with binary occupancy?
+  publish_full: true # should publish map with full probabilities?
+  publish_binary: false # should publish map with binary occupancy?
 
 local_map:
 
@@ -50,12 +50,12 @@ local_map:
   vertical_distance: 50.0
 
   # the publisher rate of the local map
-  rate: 10.0 # [Hz]
+  rate: 3.0 # [Hz]
 
   max_computation_duty_cycle: 0.33
 
-  publish_full: false # should publish map with full probabilities?
-  publish_binary: true # should publish map with binary occupancy?
+  publish_full: true # should publish map with full probabilities?
+  publish_binary: false # should publish map with binary occupancy?
 
 unknown_rays:
 

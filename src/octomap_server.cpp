@@ -274,12 +274,11 @@ OctomapServer::OctomapServer(rclcpp::NodeOptions options) : Node("octomap_server
 
   timer_global_map_ = create_wall_timer(std::chrono::duration<double>(1.0 / _global_map_rate_), std::bind(&OctomapServer::timerGlobalMap, this), new_cbk_grp());
 
-  /*   if (_local_map_enabled_) { */
-  /*     timer_local_map_ = create_wall_timer(std::chrono::duration<double>(1.0 / _local_map_rate_), std::bind(&OctomapServer::timerLocalMap, this),
-   * new_cbk_grp()); */
-  /*   } */
+  if (_local_map_enabled_) {
+    timer_local_map_ = create_wall_timer(std::chrono::duration<double>(1.0 / _local_map_rate_), std::bind(&OctomapServer::timerLocalMap, this), new_cbk_grp());
+  }
 
-  /*   time_last_local_map_processing_ = (1.0 / _local_map_rate_) * _local_map_max_computation_duty_cycle_; */
+  time_last_local_map_processing_ = (1.0 / _local_map_rate_) * _local_map_max_computation_duty_cycle_;
 
   is_initialized_ = true;
   RCLCPP_INFO(get_logger(), "[OctomapServer]: Initialized");
@@ -310,7 +309,6 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
       return;
 
     } else {
-
       /* if ((ros::Time::now() - last_time).toSec() > 1.0) { */
       /*   RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1.0, "[OctomapServer]: control manager diagnostics too old, can not integrate data!"); */
       /*   return; */
@@ -613,7 +611,7 @@ void OctomapServer::timerGlobalMap() {
     octree_->prune();
   }
 
-  if (pub_map_global_full_) {
+  if (_global_map_publish_full_) {
 
     octomap_msgs::msg::Octomap om;
     om.header.frame_id = _world_frame_;
@@ -717,7 +715,7 @@ void OctomapServer::timerLocalMap() {
     return;
   }
 
-  if (pub_map_global_full_) {
+  if (_local_map_publish_full_) {
 
     octomap_msgs::msg::Octomap om;
     om.header.frame_id = _world_frame_;
@@ -730,7 +728,7 @@ void OctomapServer::timerLocalMap() {
     }
   }
 
-  if (_global_map_publish_binary_) {
+  if (_local_map_publish_binary_) {
 
     octomap_msgs::msg::Octomap om;
     om.header.frame_id = _world_frame_;
