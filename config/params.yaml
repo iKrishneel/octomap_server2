@@ -3,12 +3,12 @@ map_while_grounded: true
 mapping:
 
   # resolution on the lowest level (fractor = 0, depth = max depth)
-  resolution: 0.2 # [m]
+  resolution: 0.4 # [m]
 
   # fractor = how many levels from the lowest level (the higherst res)
   #           should we work on
   # current_resolution = resolution * 2 ^ fractor
-  initial_fractor: 1
+  initial_fractor: 0
 
 persistency:
 
@@ -97,7 +97,7 @@ sensor_params:
 
     # sensor_0:
 
-    #   max_range: 9.0 # [m]
+    #   max_range: 10.0 # [m]
 
     #   horizontal_rays: 40
 

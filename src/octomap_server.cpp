@@ -331,14 +331,15 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
   geometry_msgs::msg::TransformStamped sensorToWorldTf;
 
   try {
-    auto res = tf_buffer_->lookupTransform(_world_frame_, msg->header.frame_id, rclcpp::Time(0));
-    pcl_ros::transformAsMatrix(res, sensorToWorld);
+    sensorToWorldTf = tf_buffer_->lookupTransform(_world_frame_, msg->header.frame_id, rclcpp::Time(0));
   }
   catch (...) {
     RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1.0, "[OctomapServer]: callbackLaserScan(): could not find tf from %s to %s", msg->header.frame_id.c_str(),
                          _world_frame_.c_str());
     return;
   }
+    
+  pcl_ros::transformAsMatrix(sensorToWorldTf, sensorToWorld);
 
   // laser scan to point cloud
   sensor_msgs::msg::PointCloud2 ros_cloud;
@@ -361,6 +362,7 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
     }
 
     sensor_msgs::msg::PointCloud2 free_cloud;
+
     projector_.projectLaser(free_scan, free_cloud);
 
     pcl::fromROSMsg(free_cloud, *free_vectors_pc);
@@ -372,6 +374,9 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
 
   pcl::transformPointCloud(*pc, *pc, sensorToWorld);
   pcl::transformPointCloud(*free_vectors_pc, *free_vectors_pc, sensorToWorld);
+
+  RCLCPP_INFO(get_logger(), "[OCTOMAP_SERVER]: sensorToWorld: %.2f, %.2f, %.2f", sensorToWorldTf.transform.translation.x,
+              sensorToWorldTf.transform.translation.y, sensorToWorldTf.transform.translation.z);
 
   pc->header.frame_id              = _world_frame_;
   free_vectors_pc->header.frame_id = _world_frame_;
