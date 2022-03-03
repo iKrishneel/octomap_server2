@@ -46,8 +46,8 @@ local_map:
   enabled: true
 
   # the bounding box distance of the local map
-  horizontal_distance: 50.0
-  vertical_distance: 50.0
+  horizontal_distance: 10.0
+  vertical_distance: 10.0
 
   # the publisher rate of the local map
   rate: 3.0 # [Hz]
