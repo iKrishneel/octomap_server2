@@ -351,7 +351,7 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
 
     sensor_msgs::msg::LaserScan free_scan = *msg;
 
-    double free_scan_distance = (msg->range_max - 1.0) < _unknown_rays_distance_ ? (msg->range_max - 1.0) : _unknown_rays_distance_;
+    /* double free_scan_distance = (msg->range_max - 1.0) < _unknown_rays_distance_ ? (msg->range_max - 1.0) : _unknown_rays_distance_; */
 
     for (size_t i = 0; i < msg->ranges.size(); i++) {
       if (msg->ranges[i] > msg->range_max || msg->ranges[i] < msg->range_min) {
@@ -383,7 +383,7 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
 
   insertPointCloud(sensorToWorldTf.transform.translation, pc, free_vectors_pc);
 
-  const octomap::point3d sensor_origin = octomap::pointTfToOctomap(sensorToWorldTf.transform.translation);
+  /* const octomap::point3d sensor_origin = octomap::pointTfToOctomap(sensorToWorldTf.transform.translation); */
   last_time_laser_scan_                = msg->header.stamp;
 }
 
@@ -662,12 +662,12 @@ void OctomapServer::timerLocalMap() {
   std::scoped_lock lock(mutex_octree_local_);
 
 
-  double time_local_map_processing;
+  /* double time_local_map_processing; */
 
-  {
-    std::scoped_lock lck(mutex_time_local_map_processing_);
-    time_local_map_processing = time_last_local_map_processing_;
-  }
+  /* { */
+  /*   std::scoped_lock lck(mutex_time_local_map_processing_); */
+  /*   time_local_map_processing = time_last_local_map_processing_; */
+  /* } */
 
   double duty_factor = time_last_local_map_processing_ / (_local_map_max_computation_duty_cycle_ * (1.0 / _local_map_rate_));
 
@@ -776,7 +776,7 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
   octomap::KeySet free_cells;
   octomap::KeySet free_ends;
 
-  const bool free_space_bounded = free_space_ray_len > 0.0f;
+  /* const bool free_space_bounded = free_space_ray_len > 0.0f; */
 
   // all measured points: make it free on ray, occupied on endpoint:
   for (PCLPointCloud::const_iterator it = cloud->begin(); it != cloud->end(); ++it) {
@@ -1007,8 +1007,8 @@ void OctomapServer::initializeDepthCamLUT(xyz_lut_t& lut, const SensorParamsDept
 
       p = rot * p;
 
-      double r = (double)(i) / horizontalRangeCount;
-      double g = (double)(j) / horizontalRangeCount;
+      /* double r = (double)(i) / horizontalRangeCount; */
+      /* double g = (double)(j) / horizontalRangeCount; */
 
       coord_coeffs.push_back({p.x(), p.y(), p.z()});
     }
@@ -1221,7 +1221,7 @@ bool OctomapServer::translateMap(std::shared_ptr<OcTree_t>& octree, const double
     coords.z() += float(z);
 
     auto value = it->getValue();
-    auto key   = it.getKey();
+    /* auto key   = it.getKey(); */
 
     auto new_key = octree_new->coordToKey(coords);
 
