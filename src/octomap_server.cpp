@@ -375,9 +375,6 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
   pcl::transformPointCloud(*pc, *pc, sensorToWorld);
   pcl::transformPointCloud(*free_vectors_pc, *free_vectors_pc, sensorToWorld);
 
-  RCLCPP_INFO(get_logger(), "[OCTOMAP_SERVER]: sensorToWorld: %.2f, %.2f, %.2f", sensorToWorldTf.transform.translation.x,
-              sensorToWorldTf.transform.translation.y, sensorToWorldTf.transform.translation.z);
-
   pc->header.frame_id              = _world_frame_;
   free_vectors_pc->header.frame_id = _world_frame_;
 
