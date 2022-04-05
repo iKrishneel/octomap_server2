@@ -3,7 +3,7 @@
 source /opt/ros/galactic/setup.bash
 
 ROS_FLAGS=""
-if [ ${SIMULATION+x} != "" ]; then
+if [[ ${SIMULATION+x} != "" ]]; then
     ROS_FLAGS="use_sim_time:=true ${ROS_FLAGS}"
 fi
 
