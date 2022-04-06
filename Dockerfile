@@ -11,8 +11,7 @@ COPY . /main_ws/src/
 
 # this:
 # 1) builds the application
-# 2) packages the application as .deb
-# 3) writes the .deb packages to /main_ws/
+# 2) packages the application as .deb & writes it to /main_ws/
 #
 # SKIP_BUILD_UNDERLAY_STEPS because otherwise build fails for some reason
 RUN SKIP_BUILD_UNDERLAY_STEPS=true /packaging/build.sh
@@ -22,7 +21,7 @@ RUN SKIP_BUILD_UNDERLAY_STEPS=true /packaging/build.sh
 #  └── build                 ▼
 
 
-FROM ghcr.io/tiiuae/fog-ros-baseimage:sha-d2cdcdb
+FROM ghcr.io/tiiuae/fog-ros-baseimage:sha-7857f7d
 
 ENTRYPOINT /entrypoint.sh
 
