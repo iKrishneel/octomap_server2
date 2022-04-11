@@ -14,13 +14,6 @@ OctomapServer::OctomapServer(rclcpp::NodeOptions options) : Node("octomap_server
   /* parse params from config file //{ */
   loaded_successfully &= parse_param("map_while_grounded", _map_while_grounded_, *this);
 
-  loaded_successfully &= parse_param("persistency.enabled", _persistency_enabled_, *this);
-  loaded_successfully &= parse_param("persistency.save_time", _persistency_save_time_, *this);
-  loaded_successfully &= parse_param("persistency.map_name", _persistency_map_name_, *this);
-  loaded_successfully &= parse_param("persistency.align_altitude.enabled", _persistency_align_altitude_enabled_, *this);
-  loaded_successfully &= parse_param("persistency.align_altitude.ground_detection_distance", _persistency_align_altitude_distance_, *this);
-  loaded_successfully &= parse_param("persistency.align_altitude.robot_height", _robot_height_, *this);
-
   loaded_successfully &= parse_param("global_map.rate", _global_map_rate_, *this);
   loaded_successfully &= parse_param("global_map.compress", _global_map_compress_, *this);
   loaded_successfully &= parse_param("global_map.publish_full", _global_map_publish_full_, *this);
@@ -381,7 +374,7 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
   insertPointCloud(sensorToWorldTf.transform.translation, pc, free_vectors_pc);
 
   /* const octomap::point3d sensor_origin = octomap::pointTfToOctomap(sensorToWorldTf.transform.translation); */
-  last_time_laser_scan_                = msg->header.stamp;
+  last_time_laser_scan_ = msg->header.stamp;
 }
 
 //}
@@ -871,27 +864,15 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
 
   // FREE CELLS
   for (octomap::KeySet::iterator it = free_cells.begin(), end = free_cells.end(); it != end; ++it) {
-
-    /* auto coords = octree_->keyToCoord(*it); */
-
     octomap::OcTreeNode* node = touchNode(octree_, *it, octree_->getTreeDepth() - resolution_fractor);
     octree_->updateNodeLogOdds(node, octree_->getProbMissLog());
-    /* octree_->setNodeValueDepth(*it,octree_->getProbMiss(), octree_->getTreeDepth() - resolution_fractor); */
-    /* octree_->updateNodeDepth(*it, octree_->getProbMissLog(), octree_->getTreeDepth() - resolution_fractor); */
   }
 
-  /* first_iter = true; */
 
   // OCCUPIED CELLS
   for (octomap::KeySet::iterator it = occupied_cells.begin(), end = occupied_cells.end(); it != end; it++) {
-
-    /* auto coords = octree_->keyToCoord(*it); */
-
     octomap::OcTreeNode* node = touchNode(octree_, *it, octree_->getTreeDepth() - resolution_fractor);
     octree_->updateNodeLogOdds(node, octree_->getProbHitLog());
-    /* octree_->setNodeValueDepth(*it, octree_->getProbHit(), octree_->getTreeDepth() - resolution_fractor); */
-    /* octree_->updateNodeDepth(*it, octree_->getProbHitLog(), octree_->getTreeDepth() - resolution_fractor); */
-
   }
 }
 
@@ -1138,57 +1119,6 @@ void OctomapServer::expandNodeRecursive(std::shared_ptr<OcTree_t>& octree, octom
 
   } else {
     return;
-  }
-}
-
-//}
-
-/* getGroundZ() //{ */
-
-std::optional<double> OctomapServer::getGroundZ(std::shared_ptr<OcTree_t>& octree, const double& x, const double& y) {
-
-  octomap::point3d p_min(float(x - _persistency_align_altitude_distance_), float(y - _persistency_align_altitude_distance_), -10000);
-  octomap::point3d p_max(float(x + _persistency_align_altitude_distance_), float(y + _persistency_align_altitude_distance_), 10000);
-
-  for (OcTree_t::leaf_bbx_iterator it = octree->begin_leafs_bbx(p_min, p_max), end = octree->end_leafs_bbx(); it != end; ++it) {
-
-    octomap::OcTreeKey   k    = it.getKey();
-    octomap::OcTreeNode* node = octree->search(k);
-
-    expandNodeRecursive(octree, node, it.getDepth());
-  }
-
-  std::vector<octomap::point3d> occupied_points;
-
-  for (OcTree_t::leaf_bbx_iterator it = octree->begin_leafs_bbx(p_min, p_max), end = octree->end_leafs_bbx(); it != end; ++it) {
-
-    if (octree->isNodeOccupied(*it)) {
-
-      occupied_points.push_back(it.getCoordinate());
-    }
-  }
-
-  if (occupied_points.size() < 3) {
-
-    RCLCPP_ERROR(get_logger(), "[OctomapServer]: low number of points for ground z calculation");
-    return {};
-
-  } else {
-
-    double max_z = std::numeric_limits<double>::lowest();
-
-    for (size_t i = 0; i < occupied_points.size(); i++) {
-      if (occupied_points[i].z() > max_z) {
-        max_z = occupied_points[i].z() - (octree_resolution_ / 2.0);
-      }
-    }
-
-    /* for (int i = 0; i < occupied_points.size(); i++) { */
-    /*   z += occupied_points[i].z(); */
-    /* } */
-    /* z /= occupied_points.size(); */
-
-    return {max_z};
   }
 }
 

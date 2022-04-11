@@ -179,12 +179,6 @@ private:
   rclcpp::TimerBase::SharedPtr timer_local_map_;
   void                         timerLocalMap();
 
-  /* rclcpp::TimerBase::SharedPtr timer_persistency_; */
-  /* void                         timerPersistency(); */
-
-  /* rclcpp::TimerBase::SharedPtr timer_altitude_alignment_; */
-  /* void                         timerAltitudeAlignment(); */
-
   // | ----------------------- parameters ----------------------- |
 
   std::atomic<bool> is_initialized_     = false;
@@ -204,13 +198,6 @@ private:
   std::string _uav_name_;
 
   double _robot_height_;
-
-  bool        _persistency_enabled_;
-  std::string _persistency_map_name_;
-  double      _persistency_save_time_;
-
-  bool   _persistency_align_altitude_enabled_;
-  double _persistency_align_altitude_distance_;
 
   bool _global_map_publish_full_;
   bool _global_map_publish_binary_;
@@ -266,8 +253,6 @@ private:
   octomap::OcTreeNode* touchNode(std::shared_ptr<OcTree_t>& octree, const octomap::OcTreeKey& key, unsigned int target_depth);
 
   void expandNodeRecursive(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node, const unsigned int node_depth);
-
-  std::optional<double> getGroundZ(std::shared_ptr<OcTree_t>& octree, const double& x, const double& y);
 
   bool translateMap(std::shared_ptr<OcTree_t>& octree, const double& x, const double& y, const double& z);
 
