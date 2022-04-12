@@ -1,4 +1,23 @@
+Implements occupancy 3D grid mapping by computing occupied "cells" from
+[rplidar](https://github.com/tiiuae/rplidar_ros2#readme) 2D scans being applied to drone's current
+(X, Y, Z) & orientation.
+
+![](misc/drawing.png)
+
 Port of the ROS1 [octomap server](https://github.com/OctoMap/octomap_mapping) for ROS2.0 
+
+
+Development, debug
+------------------
+
+[See documentation in container base image](https://github.com/tiiuae/fog-ros-baseimage/tree/main#development--debug-for-concrete-projects)
+
+
+Outdated documentation
+----------------------
+
+**WARNING**: Rest of the docs are outdated regarding container-specific build/running.
+
 
 #### Installation
 1.  Firstly make sure you have [octomap](https://github.com/OctoMap/octomap.git) installed on your system 
