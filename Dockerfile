@@ -16,12 +16,10 @@ COPY . /main_ws/src/
 # SKIP_BUILD_UNDERLAY_STEPS because otherwise build fails for some reason
 RUN SKIP_BUILD_UNDERLAY_STEPS=true /packaging/build.sh
 
-
 #  ▲               runtime ──┐
 #  └── build                 ▼
 
-
-FROM ghcr.io/tiiuae/fog-ros-baseimage:sha-7857f7d
+FROM ghcr.io/tiiuae/fog-ros-baseimage:stable
 
 ENTRYPOINT /entrypoint.sh
 
