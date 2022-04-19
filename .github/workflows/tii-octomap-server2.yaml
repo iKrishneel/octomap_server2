@@ -2,43 +2,14 @@ name: tii-octomap-server2
 
 on:
   push:
-    branches: master
-    tags:
-      - 'v*'
-      - v[0-9]+.[0-9]+.[0-9]+
-      - v[0-9]+.[0-9]+.[0-9]+-rc.[0-9]+
-  pull_request:
-    branches: [ master ]
 
 jobs:
   tii-octomap-server2:
     runs-on: ubuntu-latest
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
     steps:
-
       - uses: actions/checkout@v2
 
       - uses: docker/setup-buildx-action@v1
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-        with:
-          driver-opts: network=host
-
-      - name: Build the builder container image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          file: ./Dockerfile.build_env
-          push: true
-          tags: localhost:5000/tiiuae/octomap_server2:build_env
-          build-args: |
-            PACKAGE_NAME=octomap_server2
-            ROS_DISTRO=galactic
 
       - name: Docker meta
         id: meta
@@ -53,7 +24,6 @@ jobs:
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v1
-        if: github.event_name == 'push'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -63,11 +33,6 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            PACKAGE_NAME=octomap_server2
-            ROS_DISTRO=galactic
-            FROM_IMAGE=localhost:5000/tiiuae/octomap_server2:build_env

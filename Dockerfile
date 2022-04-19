@@ -1,33 +1,38 @@
-# fog-sw BUILDER
-ARG FROM_IMAGE
-FROM $FROM_IMAGE as fog-sw-builder
-ARG ROS_DISTRO="galactic"
-ARG UID=1000
-ARG GID=1000
-ARG PACKAGE_NAME
+FROM ghcr.io/tiiuae/fog-ros-baseimage:builder-latest AS builder
 
-WORKDIR /$PACKAGE_NAME/main_ws
-USER root
-ADD . /$PACKAGE_NAME/main_ws/src
-RUN chown -R builder:builder /$PACKAGE_NAME/main_ws
+# TODO: use the same libvtk7-qt-dev-hack_1.0_all.deb hack here to make build faster
+#       (currently fails build, don't know the reason)
 
-USER builder
+# Workaround for rosdep issue with libpcl-dev install
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+    libpcl-dev
 
-RUN if [ -e /$PACKAGE_NAME/deps_ws ]; then \
-        . /$PACKAGE_NAME/deps_ws/install/setup.sh && \
-        colcon build; \
-    elif [ -e /opt/ros/${ROS_DISTRO}/setup.sh ]; then \
-        . /opt/ros/${ROS_DISTRO}/setup.sh && \
-        colcon build; \
-    fi
+COPY . /main_ws/src/
 
-RUN sed --in-place \
-      's|^source .*|source "/'$PACKAGE_NAME'/main_ws/install/setup.bash"|' \
-      /$PACKAGE_NAME/entrypoint.sh && \
-        chmod +x /$PACKAGE_NAME/entrypoint.sh
+# this:
+# 1) builds the application
+# 2) packages the application as .deb & writes it to /main_ws/
+#
+# SKIP_BUILD_UNDERLAY_STEPS because otherwise build fails for some reason
+RUN SKIP_BUILD_UNDERLAY_STEPS=true /packaging/build.sh
 
-ENV PACKAGE_NAME $PACKAGE_NAME
-ENV RMW_IMPLEMENTATION rmw_fastrtps_cpp
+#  ▲               runtime ──┐
+#  └── build                 ▼
 
-WORKDIR /$PACKAGE_NAME
-ENTRYPOINT "/"$PACKAGE_NAME"/entrypoint.sh"
+FROM ghcr.io/tiiuae/fog-ros-baseimage:stable
+
+ENTRYPOINT /entrypoint.sh
+
+COPY entrypoint.sh /entrypoint.sh
+
+COPY misc/libvtk7-qt-dev-hack_1.0_all.deb /tmp/libvtk7-qt-dev-hack_1.0_all.deb
+
+# prevent libpcl-dev from pulling in a full graphical environment.
+# produced with these instructions: https://askubuntu.com/a/656153
+RUN dpkg -i /tmp/libvtk7-qt-dev-hack_1.0_all.deb
+
+COPY --from=builder /main_ws/ros-*-octomap-server2_*_amd64.deb /octomap-server.deb
+
+RUN apt update && apt install -y --no-install-recommends ./octomap-server.deb \
+	&& rm /octomap-server.deb
+
