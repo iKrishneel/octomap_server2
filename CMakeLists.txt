@@ -26,7 +26,6 @@ find_package(pcl_conversions REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(octomap REQUIRED)
 find_package(octomap_msgs REQUIRED)
-find_package(octomap_tools REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_msgs REQUIRED)
@@ -78,7 +77,6 @@ ament_target_dependencies(octomap_server2
   std_srvs
   octomap
   octomap_msgs
-  octomap_tools
   message_filters
   tf2_ros
   tf2_msgs

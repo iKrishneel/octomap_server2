@@ -801,7 +801,7 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
     octomap::KeyRay  keyRay;
 
     // check if the ray intersects a cell in the occupied list
-    if (octomap_tools::computeRayKeys(octree_, sensor_origin, measured_point, keyRay, resolution_fractor)) {
+    if (computeRayKeys(octree_, sensor_origin, measured_point, keyRay, resolution_fractor)) {
 
       octomap::KeyRay::iterator alterantive_ray_end = keyRay.end();
 
@@ -835,7 +835,7 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
     octomap::point3d coords = octree_->keyToCoord(*it);
 
     octomap::KeyRay key_ray;
-    if (octomap_tools::computeRayKeys(octree_, sensor_origin, coords, key_ray, resolution_fractor)) {
+    if (computeRayKeys(octree_, sensor_origin, coords, key_ray, resolution_fractor)) {
 
       for (octomap::KeyRay::iterator it2 = key_ray.begin(), end = key_ray.end(); it2 != end; ++it2) {
 
@@ -1033,7 +1033,7 @@ bool OctomapServer::copyInsideBBX2(std::shared_ptr<OcTree_t>& from, std::shared_
 
     octomap::OcTreeNode* orig_node = it.operator->();
 
-    octomap_tools::eatChildren(from, orig_node);
+    eatChildren(from, orig_node);
 
     octomap::OcTreeKey   k    = it.getKey();
     octomap::OcTreeNode* node = touchNode(to, k, it.getDepth());
@@ -1049,6 +1049,162 @@ bool OctomapServer::copyInsideBBX2(std::shared_ptr<OcTree_t>& from, std::shared_
 }
 
 /* //} */
+
+/* computeRayKeys() //{ */
+bool OctomapServer::computeRayKeys(std::shared_ptr<OcTree_t>& octree, const octomap::point3d& origin, const octomap::point3d& end, octomap::KeyRay& ray,
+                                   const double fractor) {
+
+  // see "A Faster Voxel Traversal Algorithm for Ray Tracing" by Amanatides & Woo
+  // basically: DDA in 3D
+
+  ray.reset();
+
+  int    step_multiplier = std::pow(2, fractor);
+  double resolution      = octree->getResolution() * step_multiplier;
+
+  octomap::OcTreeKey key_origin, key_end;
+  if (!octree->coordToKeyChecked(origin, key_origin) || !octree->coordToKeyChecked(end, key_end)) {
+    OCTOMAP_WARNING_STR("coordinates ( " << origin << " -> " << end << ") out of bounds in computeRayKeys");
+    return false;
+  }
+
+
+  if (key_origin == key_end)
+    return true;  // same tree cell, we're done.
+
+  ray.addKey(key_origin);
+
+  // Initialization phase -------------------------------------------------------
+
+  octomap::point3d direction = (end - origin);
+  float            length    = (float)direction.norm();
+  direction /= length;  // normalize vector
+
+  int    step[3];
+  double tMax[3];
+  double tDelta[3];
+
+  octomap::OcTreeKey current_key = key_origin;
+
+  for (unsigned int i = 0; i < 3; ++i) {
+    // compute step direction
+    if (direction(i) > 0.0)
+      step[i] = 1;
+    else if (direction(i) < 0.0)
+      step[i] = -1;
+    else
+      step[i] = 0;
+
+    // compute tMax, tDelta
+    if (step[i] != 0) {
+      // corner point of voxel (in direction of ray)
+      double voxelBorder = octree->keyToCoord(current_key[i]);
+      voxelBorder += (float)(step[i] * resolution * 0.5);
+
+      tMax[i]   = (voxelBorder - origin(i)) / direction(i);
+      tDelta[i] = resolution / fabs(direction(i));
+    } else {
+      tMax[i]   = std::numeric_limits<double>::max();
+      tDelta[i] = std::numeric_limits<double>::max();
+    }
+  }
+
+  // Incremental phase  ---------------------------------------------------------
+
+  bool done = false;
+  while (!done) {
+
+    unsigned int dim;
+
+    // find minimum tMax:
+    if (tMax[0] < tMax[1]) {
+      if (tMax[0] < tMax[2])
+        dim = 0;
+      else
+        dim = 2;
+    } else {
+      if (tMax[1] < tMax[2])
+        dim = 1;
+      else
+        dim = 2;
+    }
+
+    // advance in direction "dim"
+    current_key[dim] += step[dim] * step_multiplier;
+    tMax[dim] += tDelta[dim];
+
+
+    /* assert(current_key[dim] < octree->size()); */
+
+    // reached endpoint, key equv?
+    if (current_key == key_end) {
+      done = true;
+      break;
+    } else {
+
+      // reached endpoint world coords?
+      // dist_from_origin now contains the length of the ray when traveled until the border of the current voxel
+      double dist_from_origin = std::min(std::min(tMax[0], tMax[1]), tMax[2]);
+      // if this is longer than the expected ray length, we should have already hit the voxel containing the end point with the code above (key_end).
+      // However, we did not hit it due to accumulating discretization errors, so this is the point here to stop the ray as we would never reach the voxel
+      // key_end
+      if (dist_from_origin > length) {
+        done = true;
+        break;
+      }
+
+      else {  // continue to add freespace cells
+        ray.addKey(current_key);
+      }
+    }
+
+    assert(ray.size() < ray.sizeMax() - 1);
+
+  }  // end while
+
+  return true;
+}
+//}
+
+/* eatChildren () //{ */
+void OctomapServer::eatChildren(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node) {
+
+  if (!octree->nodeHasChildren(node)) {
+    return;
+  }
+
+  node->setValue(eatChildrenRecursive(octree, node));
+}
+//}
+
+/* eatChildrenRecursive () //{ */
+double OctomapServer::eatChildrenRecursive(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node) {
+
+  if (!octree->nodeHasChildren(node)) {
+    return node->getValue();
+  }
+
+  double max_value = -1.0;
+
+  for (unsigned int i = 0; i < 8; i++) {
+
+    if (octree->nodeChildExists(node, i)) {
+
+      octomap::OcTreeNode* child = octree->getNodeChild(node, i);
+
+      double node_value = eatChildrenRecursive(octree, child);
+
+      if (node_value > max_value) {
+        max_value = node_value;
+      }
+
+      octree->deleteNodeChild(node, i);
+    }
+  }
+
+  return max_value;
+}
+//}
 
 /* touchNode() //{ */
 
@@ -1084,7 +1240,7 @@ octomap::OcTreeNode* OctomapServer::touchNodeRecurs(std::shared_ptr<OcTree_t>& o
   // at last level, update node, end of recursion
   else {
 
-    octomap_tools::eatChildren(octree, node);
+    eatChildren(octree, node);
 
     // destroy all children
     /* for (int i = 0; i < 8; i++) { */

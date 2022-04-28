@@ -64,8 +64,8 @@
 #include <octomap_msgs/srv/get_octomap.h>
 #include <octomap_msgs/srv/bounding_box_query.hpp>
 
-#include <octomap_tools/octomap_methods.h>
 #include <octomap_server2/conversions.h>
+#include <octomap_server2/octomap_tools.hpp>
 
 #include <laser_geometry/laser_geometry.hpp>
 
@@ -156,7 +156,7 @@ private:
 
   std::vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr> sub_3dlaser_pc2_;
   std::vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr> sub_depth_cam_pc2_;
-  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr   sub_laser_scan_;
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr                sub_laser_scan_;
 
   // | ----------------------- publishers ----------------------- |
 
@@ -246,6 +246,13 @@ private:
   laser_geometry::LaserProjection projector_;
 
   bool copyInsideBBX2(std::shared_ptr<OcTree_t>& from, std::shared_ptr<OcTree_t>& to, const octomap::point3d& p_min, const octomap::point3d& p_max);
+
+  bool computeRayKeys(std::shared_ptr<OcTree_t>& octree, const octomap::point3d& origin, const octomap::point3d& end, octomap::KeyRay& ray,
+                      const double fractor);
+
+  void eatChildren(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node);
+
+  double eatChildrenRecursive(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node);
 
   octomap::OcTreeNode* touchNodeRecurs(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node, const octomap::OcTreeKey& key, unsigned int depth,
                                        unsigned int max_depth);
