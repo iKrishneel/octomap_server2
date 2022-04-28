@@ -65,7 +65,6 @@
 #include <octomap_msgs/srv/bounding_box_query.hpp>
 
 #include <octomap_server2/conversions.h>
-#include <octomap_server2/octomap_tools.hpp>
 
 #include <laser_geometry/laser_geometry.hpp>
 
