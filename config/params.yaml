@@ -44,47 +44,10 @@ unknown_rays:
   clear_occupied: false # beware, setting this to true is very dangerous
   ray_distance: 15.0
 
-# for point cloud raycasting
-sensor_params:
-
-  3d_lidar:
-
-    n_sensors: 0
-
-    # sensor_0:
-
-    #   max_range: 20.0 # [m]
-
-    #   vertical_fov_angle: deg(90.0)
-    #   vertical_rays: 64
-    #   horizontal_rays: 64
-
-  depth_camera:
-
-    n_sensors: 0
-
-    # sensor_0:
-
-    #   max_range: 9.0 # [m]
-
-    #   horizontal_fov_angle: deg(70.0)
-    #   vertical_fov_angle: deg(35.0)
-    #   horizontal_rays: 80
-    #   vertical_rays: 45
-
-  2d_lidar:
-
-    n_sensors: 0
-
-    # sensor_0:
-
-    #   max_range: 10.0 # [m]
-
-    #   horizontal_rays: 40
-
 sensor_model:
-
-  hit: 0.95  # [0, 1]
-  miss: 0.45 # [0, 1]
-  min: 0.3  # [0, 1]
-  max: 0.7  # [0, 1]
+  min_range: 0.4 # [m] ignore points closer than this
+  max_range: 10.0 # [m] ignore points further than this
+  min: 0.3  # [0, 1] occupancy threshold for definetly free
+  max: 0.9  # [0, 1] occupancy threshold for definetly occupied
+  hit: 0.9  # [0, 1]
+  miss: 0.4 # [0, 1]

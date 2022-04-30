@@ -88,28 +88,28 @@ struct xyz_lut_t
   vec3s_t offsets;     // a matrix of offset vectors
 };
 
-typedef struct
-{
-  double max_range;
-  int    horizontal_rays;
-} SensorParams2DLidar_t;
+/* typedef struct */
+/* { */
+/*   double max_range; */
+/*   int    horizontal_rays; */
+/* } SensorParams2DLidar_t; */
 
-typedef struct
-{
-  double max_range;
-  double vertical_fov;
-  int    vertical_rays;
-  int    horizontal_rays;
-} SensorParams3DLidar_t;
+/* typedef struct */
+/* { */
+/*   double max_range; */
+/*   double vertical_fov; */
+/*   int    vertical_rays; */
+/*   int    horizontal_rays; */
+/* } SensorParams3DLidar_t; */
 
-typedef struct
-{
-  double max_range;
-  double vertical_fov;
-  double horizontal_fov;
-  int    vertical_rays;
-  int    horizontal_rays;
-} SensorParamsDepthCam_t;
+/* typedef struct */
+/* { */
+/*   double max_range; */
+/*   double vertical_fov; */
+/*   double horizontal_fov; */
+/*   int    vertical_rays; */
+/*   int    horizontal_rays; */
+/* } SensorParamsDepthCam_t; */
 
 #ifdef COLOR_OCTOMAP_SERVER
 using PCLPoint      = pcl::PointXYZRGB;
@@ -267,30 +267,13 @@ private:
   virtual void insertPointCloud(const geometry_msgs::msg::Vector3& sensorOrigin, const PCLPointCloud::ConstPtr& cloud,
                                 const PCLPointCloud::ConstPtr& free_cloud);
 
-  void initialize3DLidarLUT(xyz_lut_t& lut, const SensorParams3DLidar_t sensor_params);
-  void initializeDepthCamLUT(xyz_lut_t& lut, const SensorParamsDepthCam_t sensor_params);
-
-  int n_sensors_2d_lidar_;
-  int n_sensors_3d_lidar_;
-  int n_sensors_depth_cam_;
-
-  std::vector<xyz_lut_t> sensor_2d_lidar_xyz_lut_;
-
-  std::vector<xyz_lut_t> sensor_3d_lidar_xyz_lut_;
-
-  std::vector<xyz_lut_t> sensor_depth_camera_xyz_lut_;
-
-  std::vector<SensorParams2DLidar_t> sensor_params_2d_lidar_;
-
-  std::vector<SensorParams3DLidar_t> sensor_params_3d_lidar_;
-
-  std::vector<SensorParamsDepthCam_t> sensor_params_depth_cam_;
-
   // sensor model
   double _probHit_;
   double _probMiss_;
   double _thresMin_;
   double _thresMax_;
+  double _rangeMin_;
+  double _rangeMax_;
 };
 
 //}
