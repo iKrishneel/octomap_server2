@@ -21,8 +21,9 @@ jobs:
       - name: Set image tag format with suffix
         # it is possible that run_number should be used instead run_attempt
         # run_attempt is unique number on every run and run_attempt resets to 1 if re-build is not used
+        # content of image_sha_tag_suffix is defined in fog-ros-baseimage dispatcher workflow.
         run: |
-          echo "IMAGE_TAG_FORMAT=type=sha,suffix=-${{ github.event.client_payload.run_attempt }}" >> $GITHUB_ENV
+          echo "IMAGE_TAG_FORMAT=type=sha,suffix=-${{ github.event.client_payload.image_sha_tag_suffix }}" >> $GITHUB_ENV
         if: github.event_name == 'repository_dispatch'
 
       - name: Docker meta
