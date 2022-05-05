@@ -41,17 +41,17 @@ local_map:
 unknown_rays:
 
   update_free_space: true
-  clear_occupied: false # beware, setting this to true is very dangerous
+  clear_occupied: true # beware, setting this to true is very dangerous
   ray_distance: 15.0
 
 filtering:
   filter_data: true # use median filter to remove speckle noise
-  median_filter_size: 3
+  median_filter_size: 5
 
 sensor_model:
-  min_range: 0.4 # [m] ignore points closer than this
-  max_range: 10.0 # [m] ignore points further than this
+  min_range: 0.35 # [m] ignore points closer than this
+  max_range: 8.0 # [m] ignore points further than this
   min: 0.3  # [0, 1] occupancy threshold for definetly free
   max: 0.9  # [0, 1] occupancy threshold for definetly occupied
-  hit: 0.9  # [0, 1]
-  miss: 0.4 # [0, 1]
+  hit: 0.77  # [0, 1]
+  miss: 0.45 # [0, 1]
