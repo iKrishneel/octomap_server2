@@ -6,8 +6,10 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /Grid1
         - /Odometry1/Shape1
         - /Odometry1/Covariance1
+        - /RPLidar Scan1/Topic1
         - /TF1/Frames1
         - /TF1/Tree1
       Splitter Ratio: 0.5
@@ -43,7 +45,7 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 50
+      Plane Cell Count: 100
       Reference Frame: <Fixed Frame>
       Value: true
     - Angle Tolerance: 0
@@ -117,7 +119,7 @@ Visualization Manager:
       Size (m): 0.05999999865889549
       Style: Flat Squares
       Topic:
-        Depth: 5
+        Depth: 1
         Durability Policy: Volatile
         Filter size: 10
         History Policy: Keep Last
@@ -158,7 +160,7 @@ Visualization Manager:
           Enabled: true
           Name: PlanningTree
           Namespaces:
-            tree: true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -171,7 +173,7 @@ Visualization Manager:
           Enabled: true
           Name: PlanningGoals
           Namespaces:
-            goals: true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -184,7 +186,7 @@ Visualization Manager:
           Enabled: true
           Name: PlanningPath
           Namespaces:
-            path: true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -300,7 +302,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
-    Fixed Frame: world
+    Fixed Frame: uav1/local_origin
     Frame Rate: 30
   Name: root
   Tools:
@@ -343,25 +345,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/ThirdPersonFollower
-      Distance: 39.06121826171875
+      Distance: 16.02625274658203
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -14.377398490905762
-        Y: -17.055755615234375
+        X: -3.5129384994506836
+        Y: -2.260067939758301
         Z: 0.02473628520965576
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.7497966289520264
+      Pitch: 0.7147966623306274
       Target Frame: fcu
       Value: ThirdPersonFollower (rviz_default_plugins)
-      Yaw: 3.2585549354553223
+      Yaw: 3.8735575675964355
     Saved: ~
 Window Geometry:
   Displays:
@@ -377,5 +379,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1920
-  X: 3840
+  X: 0
   Y: 0

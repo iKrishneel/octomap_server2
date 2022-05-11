@@ -20,6 +20,9 @@ def generate_launch_description():
 
     ld.add_action(launch.actions.DeclareLaunchArgument("debug", default_value="false"))
     ld.add_action(launch.actions.DeclareLaunchArgument("use_sim_time", default_value="false"))
+    ld.add_action(launch.actions.DeclareLaunchArgument("world_frame_id", default_value=str(DRONE_DEVICE_ID) + "/local_origin"))
+    ld.add_action(launch.actions.DeclareLaunchArgument("robot_frame_id", default_value=str(DRONE_DEVICE_ID) + "/fcu"))
+    
     dbg_sub = None
     if sys.stdout.isatty():
         dbg_sub = launch.substitutions.PythonExpression(['"" if "false" == "', launch.substitutions.LaunchConfiguration("debug"), '" else "debug_ros2launch ' + os.ttyname(sys.stdout.fileno()) + '"'])
@@ -39,20 +42,21 @@ def generate_launch_description():
                 plugin='octomap_server::OctomapServer',
                 remappings=[
                     # subscribers
-                    # ('cloud_in', 'rplidar/cloud'),
                     ('laser_scan_in', '/' + str(DRONE_DEVICE_ID) + '/rplidar/scan'),
+                    
                     # publishers
                     ('octomap_global_binary_out', '~/octomap/global/binary'),
                     ('octomap_global_full_out', '~/octomap/global/full'),
                     ('octomap_local_binary_out', '~/octomap/local/binary'),
                     ('octomap_local_full_out', '~/octomap/local/full'),
+                    
                     # service servers
                     ('reset_map_in', '~/reset'),
                 ],
                 parameters=[
                     pkg_share_path + '/config/params.yaml',
-                    {"world_frame_id": "world"},
-                    {"robot_frame_id": str(DRONE_DEVICE_ID) + "/fcu"},
+                    {"world_frame_id": launch.substitutions.LaunchConfiguration("world_frame_id")},
+                    {"robot_frame_id": launch.substitutions.LaunchConfiguration("robot_frame_id")},
                     {"use_sim_time": launch.substitutions.LaunchConfiguration("use_sim_time")},
                 ],
             ),
