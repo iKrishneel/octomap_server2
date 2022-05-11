@@ -50,10 +50,8 @@ def generate_launch_description():
                     ('reset_map_in', '~/reset'),
                 ],
                 parameters=[
-                    # pkg_share_path + '/config/params.yaml',
-                    pkg_share_path + '/config/outdoor_sun.yaml',
-                    {"world_frame_id": str(DRONE_DEVICE_ID) + "/local_origin"},
-                    # {"world_frame_id": "world"},
+                    pkg_share_path + '/config/params.yaml',
+                    {"world_frame_id": "world"},
                     {"robot_frame_id": str(DRONE_DEVICE_ID) + "/fcu"},
                     {"use_sim_time": launch.substitutions.LaunchConfiguration("use_sim_time")},
                 ],

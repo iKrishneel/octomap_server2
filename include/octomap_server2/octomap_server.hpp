@@ -71,7 +71,6 @@
 #include <fog_lib/params.h>
 #include <octomap_server2/octomap_server.hpp>
 
-#include <boost/circular_buffer.hpp>
 #include <cmath>
 //}
 
@@ -268,10 +267,6 @@ private:
   virtual void insertPointCloud(const geometry_msgs::msg::Vector3& sensorOrigin, const PCLPointCloud::ConstPtr& cloud,
                                 const PCLPointCloud::ConstPtr& free_cloud);
 
-  void               initializeFilter(const std::vector<float>& data);
-  float              getMedian(const boost::circular_buffer<float>& buff);
-  std::vector<float> filterData(const std::vector<float>& meas);
-
   // sensor model
   double _probHit_;
   double _probMiss_;
@@ -279,13 +274,6 @@ private:
   double _thresMax_;
   double _rangeMin_;
   double _rangeMax_;
-
-  // median filtering
-  bool filter_initialized_ = false;
-  bool _filter_data_;
-  int  _median_filter_size_;
-
-  std::vector<boost::circular_buffer<float>> filter_buffer_;
 };
 
 //}

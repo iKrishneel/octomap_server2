@@ -44,10 +44,6 @@ unknown_rays:
   clear_occupied: false # beware, setting this to true is very dangerous
   ray_distance: 15.0
 
-filtering:
-  filter_data: true # use median filter to remove speckle noise
-  median_filter_size: 3
-
 sensor_model:
   min_range: 0.4 # [m] ignore points closer than this
   max_range: 10.0 # [m] ignore points further than this

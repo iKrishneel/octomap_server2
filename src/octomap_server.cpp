@@ -43,9 +43,6 @@ OctomapServer::OctomapServer(rclcpp::NodeOptions options) : Node("octomap_server
   loaded_successfully &= parse_param("sensor_model.min_range", _rangeMin_, *this);
   loaded_successfully &= parse_param("sensor_model.max_range", _rangeMax_, *this);
 
-  loaded_successfully &= parse_param("filtering.filter_data", _filter_data_, *this);
-  loaded_successfully &= parse_param("filtering.median_filter_size", _median_filter_size_, *this);
-
   if (!loaded_successfully) {
     const std::string str = "Could not load all non-optional parameters. Shutting down.";
     RCLCPP_ERROR(get_logger(), "[Octomap_server]: %s", str.c_str());
@@ -176,11 +173,6 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
   // clamp ranges to parametrized values
   msg->range_max = std::min((double)msg->range_max, _rangeMax_);
   msg->range_min = std::max((double)msg->range_min, _rangeMin_);
-
-  // apply median filter
-  if (_filter_data_) {
-    msg->ranges = filterData(msg->ranges);
-  }
 
   // laser scan to point cloud
   sensor_msgs::msg::PointCloud2 ros_cloud;
@@ -919,49 +911,6 @@ rclcpp::CallbackGroup::SharedPtr OctomapServer::new_cbk_grp() {
   const rclcpp::CallbackGroup::SharedPtr new_group = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
   callback_groups_.push_back(new_group);
   return new_group;
-}
-//}
-
-/* initializeFilter //{ */
-void OctomapServer::initializeFilter(const std::vector<float>& data) {
-  filter_buffer_.resize(data.size());
-  for (unsigned i = 0; i < filter_buffer_.size(); i++) {
-    filter_buffer_.at(i).rset_capacity(_median_filter_size_);
-  }
-  filter_initialized_ = true;
-}
-//}
-
-/* getMedian //{ */
-float OctomapServer::getMedian(const boost::circular_buffer<float>& buff) {
-  std::vector<float> data;
-  data.reserve(buff.size());
-  for (const auto& d : buff) {
-    data.push_back(d);
-  }
-  std::nth_element(std::begin(data), std::begin(data) + data.size() / 2, std::end(data));
-  return *(std::begin(data) + data.size() / 2);
-}
-//}
-
-/* filterData //{ */
-std::vector<float> OctomapServer::filterData(const std::vector<float>& meas) {
-
-  if (!filter_initialized_) {
-    initializeFilter(meas);
-  }
-
-  assert(meas.size() == filter_buffer_.size());
-  std::vector<float> ret;
-  ret.reserve(meas.size());
-  for (unsigned it = 0; it < meas.size(); it++) {
-    const float f   = meas.at(it);
-    auto&       fil = filter_buffer_.at(it);
-    fil.push_back(f);
-    const auto median = getMedian(fil);
-    ret.push_back(median);
-  }
-  return ret;
 }
 //}
 
