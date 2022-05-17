@@ -8,7 +8,19 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
     libpcl-dev
 
 COPY . /main_ws/src/
-
+COPY misc/ros-galactic-fog-lib_0.1.0-0focal_amd64.deb /tmp/ros-galactic-fog-lib_0.1.0-0focal_amd64.deb
+RUN dpkg -i /tmp/ros-galactic-fog-lib_0.1.0-0focal_amd64.deb
+# RUN ls /etc/ros/rosdep/sources.list.d
+# RUN ls /packaging/
+# RUN cat /etc/ros/rosdep/sources.list.d/51-fogsw-module.list
+# RUN cat /etc/ros/rosdep/sources.list.d/20-default.list
+ARG rosdepYamlPath=/packaging/rosdep.yaml
+RUN  if [ -e ${rosdepYamlPath} ]; then \ 
+    echo "fog_lib:" >> $rosdepYamlPath && \
+    echo "    ubuntu: ros-galactic-fog-lib" >> $rosdepYamlPath && \
+    echo "yaml file://${rosdepYamlPath}" > /etc/ros/rosdep/sources.list.d/51-fogsw-module.list; \
+    fi;
+RUN cat $rosdepYamlPath
 # this:
 # 1) builds the application
 # 2) packages the application as .deb & writes it to /main_ws/
@@ -26,10 +38,12 @@ ENTRYPOINT /entrypoint.sh
 COPY entrypoint.sh /entrypoint.sh
 
 COPY misc/libvtk7-qt-dev-hack_1.0_all.deb /tmp/libvtk7-qt-dev-hack_1.0_all.deb
+COPY misc/ros-galactic-fog-lib_0.1.0-0focal_amd64.deb /tmp/ros-galactic-fog-lib_0.1.0-0focal_amd64.deb
 
 # prevent libpcl-dev from pulling in a full graphical environment.
 # produced with these instructions: https://askubuntu.com/a/656153
 RUN dpkg -i /tmp/libvtk7-qt-dev-hack_1.0_all.deb
+RUN dpkg -i /tmp/ros-galactic-fog-lib_0.1.0-0focal_amd64.deb
 
 COPY --from=builder /main_ws/ros-*-octomap-server2_*_amd64.deb /octomap-server.deb
 
