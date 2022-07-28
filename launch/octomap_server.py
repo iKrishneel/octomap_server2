@@ -20,7 +20,7 @@ def generate_launch_description():
 
     ld.add_action(launch.actions.DeclareLaunchArgument("debug", default_value="false"))
     ld.add_action(launch.actions.DeclareLaunchArgument("use_sim_time", default_value="false"))
-    ld.add_action(launch.actions.DeclareLaunchArgument("world_frame_id", default_value=str(DRONE_DEVICE_ID) + "/local_origin"))
+    ld.add_action(launch.actions.DeclareLaunchArgument("world_frame_id", default_value="world"))
     ld.add_action(launch.actions.DeclareLaunchArgument("robot_frame_id", default_value=str(DRONE_DEVICE_ID) + "/fcu"))
     
     dbg_sub = None
