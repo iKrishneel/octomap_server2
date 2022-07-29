@@ -146,12 +146,12 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
 
     if (getting_laser_scan_) {
 
-      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1.0, "[OctomapServer]: missing control manager diagnostics, can not integrate data!");
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: missing control manager diagnostics, can not integrate data!");
       return;
     }
   }
 
-  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1.0, "[OctomapServer]: callbackLaserScan()");
+  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: callbackLaserScan()");
 
   PCLPointCloud::Ptr pc              = boost::make_shared<PCLPointCloud>();
   PCLPointCloud::Ptr free_vectors_pc = boost::make_shared<PCLPointCloud>();
@@ -163,7 +163,7 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
     sensorToWorldTf = tf_buffer_->lookupTransform(_world_frame_, msg->header.frame_id, rclcpp::Time(0));
   }
   catch (...) {
-    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1.0, "[OctomapServer]: callbackLaserScan(): could not find tf from %s to %s", msg->header.frame_id.c_str(),
+    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: callbackLaserScan(): could not find tf from %s to %s", msg->header.frame_id.c_str(),
                          _world_frame_.c_str());
     return;
   }
@@ -341,21 +341,21 @@ void OctomapServer::timerLocalMap() {
 
   if (horizontal_distance < 10) {
     horizontal_distance = 10;
-    RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 1.0, "[OctomapServer]: saturating local map size to 10, your computer is probably not very powerfull");
+    RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: saturating local map size to 10, your computer is probably not very powerfull");
   }
 
   if (vertical_distance < 5) {
     vertical_distance = 5;
-    RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 1.0,
+    RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 1000,
                           "[OctomapServer]: saturating local map vertical size to 5, your computer is probably not very powerfull");
   }
 
-  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 5.0, "[OctomapServer]: local map size: hor %d, ver %d", int(horizontal_distance), int(vertical_distance));
+  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 5000, "[OctomapServer]: local map size: hor %d, ver %d", int(horizontal_distance), int(vertical_distance));
 
   bool success = createLocalMap(_robot_frame_, horizontal_distance, vertical_distance, octree_local_);
 
   if (!success) {
-    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1.0, "[OctomapServer]: failed to create the local map");
+    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: failed to create the local map");
     return;
   }
 
@@ -410,13 +410,13 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
     resolution_fractor = resolution_fractor_;
   }
 
-  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1.0, "[OctomapServer]: insertPointCloud()");
+  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: insertPointCloud()");
 
   const octomap::point3d sensor_origin      = octomap::pointTfToOctomap(sensorOriginTf);
   const float            free_space_ray_len = float(_unknown_rays_distance_);
   double                 coarse_res         = octree_->getResolution() * pow(2.0, resolution_fractor);
 
-  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1.0, "[OctomapServer]: current resolution = %.2f m", coarse_res);
+  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: current resolution = %.2f m", coarse_res);
 
   octomap::KeySet occupied_cells;
   octomap::KeySet free_cells;
@@ -753,7 +753,6 @@ octomap::OcTreeNode* OctomapServer::touchNodeRecurs(std::shared_ptr<OcTree_t>& o
 
     unsigned int pos = octomap::computeChildIdx(key, int(octree->getTreeDepth() - depth - 1));
 
-    /* ROS_INFO("pos: %d", pos); */
     if (!octree->nodeChildExists(node, pos)) {
 
       // not a pruned node, create requested child
@@ -862,7 +861,7 @@ bool OctomapServer::createLocalMap(const std::string frame_id, const double hori
     sensorToWorldTf = tf_buffer_->lookupTransform(_world_frame_, frame_id, rclcpp::Time(0));
   }
   catch (...) {
-    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1.0, "[OctomapServer]: createLocalMap(): could not find tf from %s to %s", frame_id.c_str(),
+    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: createLocalMap(): could not find tf from %s to %s", frame_id.c_str(),
                          _world_frame_.c_str());
     return false;
   }
@@ -894,9 +893,9 @@ bool OctomapServer::createLocalMap(const std::string frame_id, const double hori
     time_last_local_map_processing_ = (time_end - time_start).seconds();
 
     if (time_last_local_map_processing_ > ((1.0 / _local_map_rate_) * _local_map_max_computation_duty_cycle_)) {
-      RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 5.0, "[OctomapServer]: local map creation time = %.3f sec", time_last_local_map_processing_);
+      RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 5000, "[OctomapServer]: local map creation time = %.3f sec", time_last_local_map_processing_);
     } else {
-      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 5.0, "[OctomapServer]: local map creation time = %.3f sec", time_last_local_map_processing_);
+      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 5000, "[OctomapServer]: local map creation time = %.3f sec", time_last_local_map_processing_);
     }
   }
 
