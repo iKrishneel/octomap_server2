@@ -10,6 +10,9 @@ add_definitions("-Wpedantic")
 add_definitions("-g")
 add_definitions("-O3") # because normal release is just -O2
 
+# remove debug info from octomap
+add_definitions("-DOCTOMAP_NODEBUGOUT")
+
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 
