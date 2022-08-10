@@ -12,6 +12,8 @@ add_definitions("-O3") # because normal release is just -O2
 
 # remove debug info from octomap
 add_definitions("-DOCTOMAP_NODEBUGOUT")
+# remove warning info from PCL
+set(PCL_FIND_QUIETLY INTERNAL)
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
