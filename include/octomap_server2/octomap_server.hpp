@@ -35,7 +35,6 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include <octomap/OcTreeNode.h>
-#include <octomap/octomap_types.h>
 #include <octomap/octomap.h>
 #include <octomap/OcTreeKey.h>
 
@@ -69,7 +68,7 @@
 #include <laser_geometry/laser_geometry.hpp>
 
 #include <fog_lib/params.h>
-#include <octomap_server2/octomap_server.hpp>
+#include "octomap_server2/octomap_server.hpp"
 
 #include <cmath>
 //}
@@ -171,12 +170,19 @@ private:
 
   // | ------------------------- timers ------------------------- |
 
-  rclcpp::TimerBase::SharedPtr timer_global_map_;
-  double                       _global_map_rate_;
-  void                         timerGlobalMap();
+  rclcpp::TimerBase::SharedPtr timer_global_map_publisher_;
+  double     _global_map_publisher_rate_;
+  void       timerGlobalMapPublisher();
 
-  rclcpp::TimerBase::SharedPtr timer_local_map_;
-  void                         timerLocalMap();
+  rclcpp::TimerBase::SharedPtr timer_global_map_creator_;
+  double     _global_map_creator_rate_;
+  void       timerGlobalMapCreator();
+
+  rclcpp::TimerBase::SharedPtr timer_local_map_publisher_;
+  void       timerLocalMapPublisher();
+
+  rclcpp::TimerBase::SharedPtr timer_local_map_resizer_;
+  void       timerLocalMapResizer();
 
   // | ----------------------- parameters ----------------------- |
 
@@ -200,26 +206,26 @@ private:
 
   bool _global_map_publish_full_;
   bool _global_map_publish_binary_;
+  bool _global_map_enabled_;
 
   bool _map_while_grounded_;
 
-  double _local_map_size_;
-  bool   _local_map_enabled_;
-  bool   _local_map_publish_full_;
-  bool   _local_map_publish_binary_;
+  bool _local_map_publish_full_;
+  bool _local_map_publish_binary_;
 
-  std::shared_ptr<OcTree_t> octree_;
-  std::mutex                mutex_octree_;
-  std::atomic<bool>         octree_initialized_;
+  std::shared_ptr<OcTree_t> octree_global_;
+  std::mutex                mutex_octree_global_;
 
   std::shared_ptr<OcTree_t> octree_local_;
+  std::shared_ptr<OcTree_t> octree_local_0_;
+  std::shared_ptr<OcTree_t> octree_local_1_;
+  int                       octree_local_idx_ = 0;
   std::mutex                mutex_octree_local_;
+
+  std::atomic<bool> octrees_initialized_;
 
   double     avg_time_cloud_insertion_ = 0;
   std::mutex mutex_avg_time_cloud_insertion_;
-
-  double     time_last_local_map_processing_ = 0;
-  std::mutex mutex_time_local_map_processing_;
 
   std::string _world_frame_;
   std::string _robot_frame_;
@@ -227,24 +233,30 @@ private:
   bool        _global_map_compress_;
   std::string _map_path_;
 
-  double _local_map_horizontal_distance_;
-  double _local_map_vertical_distance_;
-  double _local_map_rate_;
-  double _local_map_max_computation_duty_cycle_;
+  int        _local_map_width_;
+  int        _local_map_height_;
+  int        local_map_width_;
+  int        local_map_height_;
+  std::mutex mutex_local_map_dimensions_;
+  double     _local_map_publisher_rate_;
 
-  double local_map_horizontal_offset_ = 0;
-  double local_map_vertical_offset_   = 0;
+  double     local_map_duty_ = 0;
+  std::mutex mutex_local_map_duty_;
 
   bool   _unknown_rays_update_free_space_;
   bool   _unknown_rays_clear_occupied_;
   double _unknown_rays_distance_;
 
-  int        resolution_fractor_;
+  int        local_resolution_fractor_;
+  int        global_resolution_fractor_;
   std::mutex mutex_resolution_fractor_;
 
   laser_geometry::LaserProjection projector_;
 
-  bool copyInsideBBX2(std::shared_ptr<OcTree_t>& from, std::shared_ptr<OcTree_t>& to, const octomap::point3d& p_min, const octomap::point3d& p_max);
+  bool copyInsideBBX2(std::shared_ptr<OcTree_t>& from, const int& from_fractor, std::shared_ptr<OcTree_t>& to, const int& to_fractor,
+                      const octomap::point3d& p_min, const octomap::point3d& p_max);
+
+  bool copyLocalMap(std::shared_ptr<OcTree_t>& from, const int& from_fractor, std::shared_ptr<OcTree_t>& to, const int& to_fractor);
 
   bool computeRayKeys(std::shared_ptr<OcTree_t>& octree, const octomap::point3d& origin, const octomap::point3d& end, octomap::KeyRay& ray,
                       const double fractor);
@@ -252,6 +264,8 @@ private:
   void eatChildren(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node);
 
   double eatChildrenRecursive(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node);
+
+  void setNodeValueDepth(std::shared_ptr<OcTree_t>& octree, const octomap::OcTreeKey& key, float log_odds_value, int depth, bool lazy_eval);
 
   octomap::OcTreeNode* touchNodeRecurs(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node, const octomap::OcTreeKey& key, unsigned int depth,
                                        unsigned int max_depth);

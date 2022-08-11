@@ -14,21 +14,25 @@ OctomapServer::OctomapServer(rclcpp::NodeOptions options) : Node("octomap_server
   /* parse params from config file //{ */
   loaded_successfully &= parse_param("map_while_grounded", _map_while_grounded_, *this);
 
-  loaded_successfully &= parse_param("global_map.rate", _global_map_rate_, *this);
+  loaded_successfully &= parse_param("global_map.publisher_rate", _global_map_publisher_rate_, *this);
+  loaded_successfully &= parse_param("global_map.creation_rate", _global_map_creator_rate_, *this);
+  loaded_successfully &= parse_param("global_map.enabled", _global_map_enabled_, *this);
   loaded_successfully &= parse_param("global_map.compress", _global_map_compress_, *this);
   loaded_successfully &= parse_param("global_map.publish_full", _global_map_publish_full_, *this);
   loaded_successfully &= parse_param("global_map.publish_binary", _global_map_publish_binary_, *this);
+  loaded_successfully &= parse_param("global_map.initial_fractor", global_resolution_fractor_, *this);
 
-  loaded_successfully &= parse_param("local_map.enabled", _local_map_enabled_, *this);
-  loaded_successfully &= parse_param("local_map.horizontal_distance", _local_map_horizontal_distance_, *this);
-  loaded_successfully &= parse_param("local_map.vertical_distance", _local_map_vertical_distance_, *this);
-  loaded_successfully &= parse_param("local_map.rate", _local_map_rate_, *this);
-  loaded_successfully &= parse_param("local_map.max_computation_duty_cycle", _local_map_max_computation_duty_cycle_, *this);
+  loaded_successfully &= parse_param("local_map.size.width", _local_map_width_, *this);
+  loaded_successfully &= parse_param("local_map.size.height", _local_map_height_, *this);
+  loaded_successfully &= parse_param("local_map.publisher_rate", _local_map_publisher_rate_, *this);
   loaded_successfully &= parse_param("local_map.publish_full", _local_map_publish_full_, *this);
   loaded_successfully &= parse_param("local_map.publish_binary", _local_map_publish_binary_, *this);
+  loaded_successfully &= parse_param("local_map.initial_fractor", local_resolution_fractor_, *this);
 
-  loaded_successfully &= parse_param("mapping.resolution", octree_resolution_, *this);
-  loaded_successfully &= parse_param("mapping.initial_fractor", resolution_fractor_, *this);
+  local_map_width_ = _local_map_width_;
+  local_map_height_ = _local_map_height_;
+
+  loaded_successfully &= parse_param("resolution", octree_resolution_, *this);
   loaded_successfully &= parse_param("world_frame_id", _world_frame_, *this);
   loaded_successfully &= parse_param("robot_frame_id", _robot_frame_, *this);
 
@@ -54,19 +58,27 @@ OctomapServer::OctomapServer(rclcpp::NodeOptions options) : Node("octomap_server
 
   /* initialize octomap object & params //{ */
 
-  octree_ = std::make_shared<OcTree_t>(octree_resolution_);
-  octree_->setProbHit(_probHit_);
-  octree_->setProbMiss(_probMiss_);
-  octree_->setClampingThresMin(_thresMin_);
-  octree_->setClampingThresMax(_thresMax_);
+  octree_global_ = std::make_shared<OcTree_t>(octree_resolution_);
+  octree_global_->setProbHit(_probHit_);
+  octree_global_->setProbMiss(_probMiss_);
+  octree_global_->setClampingThresMin(_thresMin_);
+  octree_global_->setClampingThresMax(_thresMax_);
 
-  octree_local_ = std::make_shared<OcTree_t>(octree_resolution_);
-  octree_local_->setProbHit(_probHit_);
-  octree_local_->setProbMiss(_probMiss_);
-  octree_local_->setClampingThresMin(_thresMin_);
-  octree_local_->setClampingThresMax(_thresMax_);
+  octree_local_0_ = std::make_shared<OcTree_t>(octree_resolution_);
+  octree_local_0_->setProbHit(_probHit_);
+  octree_local_0_->setProbMiss(_probMiss_);
+  octree_local_0_->setClampingThresMin(_thresMin_);
+  octree_local_0_->setClampingThresMax(_thresMax_);
 
-  octree_initialized_ = true;
+  octree_local_1_ = std::make_shared<OcTree_t>(octree_resolution_);
+  octree_local_1_->setProbHit(_probHit_);
+  octree_local_1_->setProbMiss(_probMiss_);
+  octree_local_1_->setClampingThresMin(_thresMin_);
+  octree_local_1_->setClampingThresMax(_thresMax_);
+
+  octree_local_ = octree_local_0_;
+
+  octrees_initialized_ = true;
 
   //}
 
@@ -112,14 +124,13 @@ OctomapServer::OctomapServer(rclcpp::NodeOptions options) : Node("octomap_server
   //}
 
   /* timers //{ */
-
-  timer_global_map_ = create_wall_timer(std::chrono::duration<double>(1.0 / _global_map_rate_), std::bind(&OctomapServer::timerGlobalMap, this), new_cbk_grp());
-
-  if (_local_map_enabled_) {
-    timer_local_map_ = create_wall_timer(std::chrono::duration<double>(1.0 / _local_map_rate_), std::bind(&OctomapServer::timerLocalMap, this), new_cbk_grp());
+  if (_global_map_enabled_) {
+    timer_global_map_publisher_ = create_wall_timer(std::chrono::duration<double>(1.0 / _global_map_publisher_rate_), std::bind(&OctomapServer::timerGlobalMapPublisher, this), new_cbk_grp());
+    timer_global_map_creator_ = create_wall_timer(std::chrono::duration<double>(1.0 / _global_map_creator_rate_), std::bind(&OctomapServer::timerGlobalMapCreator, this), new_cbk_grp());
   }
 
-  time_last_local_map_processing_ = (1.0 / _local_map_rate_) * _local_map_max_computation_duty_cycle_;
+  timer_local_map_publisher_ = create_wall_timer(std::chrono::duration<double>(1.0 / _local_map_publisher_rate_), std::bind(&OctomapServer::timerLocalMapPublisher, this), new_cbk_grp());
+  timer_local_map_resizer_ = create_wall_timer(std::chrono::duration<double>(1.0), std::bind(&OctomapServer::timerLocalMapResizer, this), new_cbk_grp());
 
   is_initialized_ = true;
   RCLCPP_INFO(get_logger(), "[OctomapServer]: Initialized");
@@ -138,7 +149,7 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
     return;
   }
 
-  if (!octree_initialized_) {
+  if (!octrees_initialized_) {
     return;
   }
 
@@ -223,10 +234,11 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
 bool OctomapServer::callbackResetMap([[maybe_unused]] const std::shared_ptr<std_srvs::srv::Empty::Request> request,
                                      [[maybe_unused]] std::shared_ptr<std_srvs::srv::Empty::Response>      response) {
   {
-    std::scoped_lock lock(mutex_octree_);
-    octree_->clear();
-    octree_initialized_ = true;
+    std::scoped_lock lock(mutex_octree_global_, mutex_octree_local_);
+    octree_global_->clear();
+    octree_local_->clear();
   }
+  octrees_initialized_ = true;
 
   RCLCPP_INFO(get_logger(), "[OctomapServer]: octomap cleared");
   return true;
@@ -236,31 +248,34 @@ bool OctomapServer::callbackResetMap([[maybe_unused]] const std::shared_ptr<std_
 
 // | ------------------------- timers ------------------------- |
 
-/* timerGlobalMap() //{ */
+/* timerGlobalMapPublisher() //{ */
 
-void OctomapServer::timerGlobalMap() {
+void OctomapServer::timerGlobalMapPublisher() {
 
   if (!is_initialized_) {
     return;
   }
 
-  if (!octree_initialized_) {
+  if (!octrees_initialized_) {
     return;
   }
 
-  RCLCPP_INFO_ONCE(get_logger(), "[OctomapServer]: full map timer spinning");
+  RCLCPP_INFO_ONCE(get_logger(), "[OctomapServer]: full map publisher timer spinning");
 
-  std::scoped_lock lock(mutex_octree_);
+  size_t octomap_size; 
+  {
+    std::scoped_lock lock(mutex_octree_global_);
 
-  size_t octomap_size = octree_->size();
+    octomap_size = octree_global_->size();
+  }
   if (octomap_size <= 1) {
-    RCLCPP_WARN(get_logger(), "[OctomapServer]: Nothing to publish, octree is empty");
+    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: Nothing to publish, octree is empty");
     return;
   }
 
-  if (_global_map_compress_) {
-    octree_->prune();
-  }
+  /* if (_global_map_compress_) { */
+  /*   octree_global_->prune(); */
+  /* } */
 
   if (_global_map_publish_full_) {
 
@@ -268,7 +283,13 @@ void OctomapServer::timerGlobalMap() {
     om.header.frame_id = _world_frame_;
     om.header.stamp    = get_clock()->now();  // TODO
 
-    if (octomap_msgs::fullMapToMsg(*octree_, om)) {
+    bool success = false;
+    {
+      std::scoped_lock lock(mutex_octree_global_);
+      success = octomap_msgs::fullMapToMsg(*octree_global_, om);
+    }
+
+    if (success) {
       pub_map_global_full_->publish(om);
     } else {
       RCLCPP_ERROR(get_logger(), "[OctomapServer]: error serializing global octomap to full representation");
@@ -281,7 +302,13 @@ void OctomapServer::timerGlobalMap() {
     om.header.frame_id = _world_frame_;
     om.header.stamp    = get_clock()->now();  // TODO
 
-    if (octomap_msgs::binaryMapToMsg(*octree_, om)) {
+    bool success = false;
+    {
+      std::scoped_lock lock(mutex_octree_global_);
+      success = octomap_msgs::binaryMapToMsg(*octree_global_, om);
+    }
+
+    if (success) {
       pub_map_global_binary_->publish(om);
     } else {
       RCLCPP_ERROR(get_logger(), "[OctomapServer]: error serializing global octomap to binary representation");
@@ -291,78 +318,56 @@ void OctomapServer::timerGlobalMap() {
 
 //}
 
-/* timerLocalMap() //{ */
+/* timerGlobalMapCreator() //{ */
 
-void OctomapServer::timerLocalMap() {
+void OctomapServer::timerGlobalMapCreator() {
 
   if (!is_initialized_) {
     return;
   }
 
-  if (!octree_initialized_) {
+  if (!octrees_initialized_) {
     return;
   }
 
-  RCLCPP_INFO_ONCE(get_logger(), "[OctomapServer]: local map timer spinning");
+  RCLCPP_INFO_ONCE(get_logger(), "[OctomapServer]: global map creator timer spinning");
 
-  std::scoped_lock lock(mutex_octree_local_);
+  // copy the local map into a buffer
 
+  std::shared_ptr<OcTree_t> local_map_tmp_;
+  {
+    std::scoped_lock lock(mutex_octree_local_);
 
-  double time_local_map_processing;
+    local_map_tmp_ = std::make_shared<OcTree_t>(*octree_local_);
+  }
 
   {
-    std::scoped_lock lck(mutex_time_local_map_processing_);
-    time_local_map_processing = time_last_local_map_processing_;
+    std::scoped_lock lock(mutex_octree_global_);
+
+    copyLocalMap(local_map_tmp_, local_resolution_fractor_, octree_global_, global_resolution_fractor_);
   }
+}
 
-  double duty_factor = time_local_map_processing / (_local_map_max_computation_duty_cycle_ * (1.0 / _local_map_rate_));
+//}
 
-  if (duty_factor >= 1.0) {
+/* timerLocalMapPublisher() //{ */
 
-    local_map_horizontal_offset_ -= 0.5;
-    local_map_vertical_offset_ -= 0.25;
+void OctomapServer::timerLocalMapPublisher() {
 
-  } else if (duty_factor <= 0.5) {
-
-    local_map_horizontal_offset_ += 0.5;
-    local_map_vertical_offset_ += 0.25;
-
-    if (local_map_vertical_offset_ >= 0) {
-      local_map_horizontal_offset_ = 0;
-    }
-
-    if (local_map_vertical_offset_ >= 0) {
-      local_map_vertical_offset_ = 0;
-    }
-  }
-
-  double horizontal_distance = _local_map_horizontal_distance_ + local_map_horizontal_offset_;
-  double vertical_distance   = _local_map_vertical_distance_ + local_map_vertical_offset_;
-
-  if (horizontal_distance < 10) {
-    horizontal_distance = 10;
-    RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: saturating local map size to 10, your computer is probably not very powerfull");
-  }
-
-  if (vertical_distance < 5) {
-    vertical_distance = 5;
-    RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 1000,
-                          "[OctomapServer]: saturating local map vertical size to 5, your computer is probably not very powerfull");
-  }
-
-  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 5000, "[OctomapServer]: local map size: hor %d, ver %d", int(horizontal_distance), int(vertical_distance));
-
-  bool success = createLocalMap(_robot_frame_, horizontal_distance, vertical_distance, octree_local_);
-
-  if (!success) {
-    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: failed to create the local map");
+  if (!is_initialized_) {
     return;
   }
+
+  if (!octrees_initialized_) {
+    return;
+  }
+
+  RCLCPP_INFO_ONCE(get_logger(), "[OctomapServer]: local map publisher timer spinning");
 
   size_t octomap_size = octree_local_->size();
 
   if (octomap_size <= 1) {
-    RCLCPP_WARN(get_logger(), "[OctomapServer]: Nothing to publish, octree is empty");
+    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: Nothing to publish, octree_local_, octree is empty");
     return;
   }
 
@@ -370,9 +375,15 @@ void OctomapServer::timerLocalMap() {
 
     octomap_msgs::msg::Octomap om;
     om.header.frame_id = _world_frame_;
-    om.header.stamp    = get_clock()->now();
+    om.header.stamp    = get_clock()->now();  // TODO
 
-    if (octomap_msgs::fullMapToMsg(*octree_local_, om)) {
+    bool success = false;
+    {
+      std::scoped_lock lock(mutex_octree_local_);
+      success = octomap_msgs::fullMapToMsg(*octree_local_, om);
+    }
+
+    if (success) {
       pub_map_local_full_->publish(om);
     } else {
       RCLCPP_ERROR(get_logger(), "[OctomapServer]: error serializing local octomap to full representation");
@@ -383,13 +394,77 @@ void OctomapServer::timerLocalMap() {
 
     octomap_msgs::msg::Octomap om;
     om.header.frame_id = _world_frame_;
-    om.header.stamp    = get_clock()->now();
+    om.header.stamp    = get_clock()->now();  // TODO
 
-    if (octomap_msgs::binaryMapToMsg(*octree_local_, om)) {
+    bool success = false;
+    {
+      std::scoped_lock lock(mutex_octree_local_);
+      success = octomap_msgs::binaryMapToMsg(*octree_local_, om);
+    }
+
+    if (success) {
       pub_map_local_binary_->publish(om);
     } else {
       RCLCPP_ERROR(get_logger(), "[OctomapServer]: error serializing local octomap to binary representation");
     }
+  }
+}
+
+//}
+
+/* timerLocalMapResizer() //{ */
+
+void OctomapServer::timerLocalMapResizer() {
+
+  if (!is_initialized_) {
+    return;
+  }
+
+  if (!octrees_initialized_) {
+    return;
+  }
+
+  RCLCPP_INFO_ONCE(get_logger(), "[OctomapServer]: local map resizer timer spinning");
+
+  double local_map_duty;
+  {
+    std::scoped_lock lock(mutex_local_map_duty_);
+    local_map_duty = local_map_duty_;
+  }
+
+  RCLCPP_INFO(get_logger(), "[OctomapServer]: local map duty time: %.3f s", local_map_duty);
+
+  {
+    std::scoped_lock lock(mutex_local_map_dimensions_);
+
+    if (local_map_duty > 0.9) {
+      local_map_width_ -= int(ceil(10.0 * (local_map_duty - 0.9)));
+      local_map_height_ -= int(ceil(10.0 * (local_map_duty - 0.9)));
+    } else if (local_map_duty < 0.8) {
+      local_map_width_++;
+      local_map_height_++;
+    }
+
+    if (local_map_width_ < 10) {
+      local_map_width_ = 10;
+    } else if (local_map_width_ > _local_map_width_) {
+      local_map_width_ = _local_map_width_;
+    }
+
+    if (local_map_height_ < 10) {
+      local_map_height_ = 10;
+    } else if (local_map_height_ > _local_map_height_) {
+      local_map_height_ = _local_map_height_;
+    }
+
+    local_map_duty = 0;
+  }
+
+  RCLCPP_INFO(get_logger(), "[OctomapServer]: local map size %d %d", local_map_width_, local_map_height_);
+
+  {
+    std::scoped_lock lock(mutex_local_map_duty_);
+    local_map_duty_ = local_map_duty;
   }
 }
 
@@ -402,27 +477,32 @@ void OctomapServer::timerLocalMap() {
 void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOriginTf, const PCLPointCloud::ConstPtr& cloud,
                                      const PCLPointCloud::ConstPtr& free_vectors_cloud) {
 
-  std::scoped_lock lock(mutex_octree_);
+  std::scoped_lock lock(mutex_octree_local_);
+  rclcpp::Time time_start = get_clock()->now();
+
 
   double resolution_fractor;
+  int local_map_width;
+  int local_map_height;
   {
-    std::scoped_lock lck(mutex_resolution_fractor_);
-    resolution_fractor = resolution_fractor_;
+    std::scoped_lock lck(mutex_resolution_fractor_, mutex_local_map_dimensions_);
+    resolution_fractor = local_resolution_fractor_;
+    local_map_width = local_map_width_;
+    local_map_height = local_map_height_;
   }
 
   RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: insertPointCloud()");
 
   const octomap::point3d sensor_origin      = octomap::pointTfToOctomap(sensorOriginTf);
-  const float            free_space_ray_len = float(_unknown_rays_distance_);
-  double                 coarse_res         = octree_->getResolution() * pow(2.0, resolution_fractor);
+  const float            free_space_ray_len = std::min(float(_unknown_rays_distance_), float(sqrt(2 * pow(local_map_width / 2.0, 2) + pow(local_map_height / 2.0, 2))));
+
+  double coarse_res = octree_local_->getResolution() * pow(2.0, resolution_fractor);
 
   RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: current resolution = %.2f m", coarse_res);
 
   octomap::KeySet occupied_cells;
   octomap::KeySet free_cells;
   octomap::KeySet free_ends;
-
-  /* const bool free_space_bounded = free_space_ray_len > 0.0f; */
 
   // all measured points: make it free on ray, occupied on endpoint:
   for (PCLPointCloud::const_iterator it = cloud->begin(); it != cloud->end(); ++it) {
@@ -435,14 +515,14 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
     const float      point_distance = float((measured_point - sensor_origin).norm());
 
     octomap::OcTreeKey key;
-    if (octree_->coordToKeyChecked(measured_point, key)) {
+    if (octree_local_->coordToKeyChecked(measured_point, key)) {
       occupied_cells.insert(key);
     }
 
     // move end point to distance min(free space ray len, current distance)
     measured_point = sensor_origin + (measured_point - sensor_origin).normalize() * std::min(free_space_ray_len, point_distance);
 
-    octomap::OcTreeKey measured_key = octree_->coordToKey(measured_point);
+    octomap::OcTreeKey measured_key = octree_local_->coordToKey(measured_point);
 
     free_ends.insert(measured_key);
   }
@@ -454,10 +534,15 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
     }
 
     octomap::point3d measured_point(it->x, it->y, it->z);
-    octomap::KeyRay  keyRay;
+    const float      point_distance = float((measured_point - sensor_origin).norm());
+
+    octomap::KeyRay keyRay;
+
+    // move end point to distance min(free space ray len, current distance)
+    measured_point = sensor_origin + (measured_point - sensor_origin).normalize() * std::min(free_space_ray_len, point_distance);
 
     // check if the ray intersects a cell in the occupied list
-    if (computeRayKeys(octree_, sensor_origin, measured_point, keyRay, resolution_fractor)) {
+    if (computeRayKeys(octree_local_, sensor_origin, measured_point, keyRay, resolution_fractor)) {
 
       octomap::KeyRay::iterator alterantive_ray_end = keyRay.end();
 
@@ -466,9 +551,9 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
         if (!_unknown_rays_clear_occupied_) {
 
           // check if the cell is occupied in the map
-          auto node = octree_->search(*it2);
+          auto node = octree_local_->search(*it2);
 
-          if (node && octree_->isNodeOccupied(node)) {
+          if (node && octree_local_->isNodeOccupied(node)) {
 
             if (it2 == keyRay.begin()) {
               alterantive_ray_end = keyRay.begin();  // special case
@@ -488,10 +573,10 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
   // for FREE RAY ENDS
   for (octomap::KeySet::iterator it = free_ends.begin(), end = free_ends.end(); it != end; ++it) {
 
-    octomap::point3d coords = octree_->keyToCoord(*it);
+    octomap::point3d coords = octree_local_->keyToCoord(*it);
 
     octomap::KeyRay key_ray;
-    if (computeRayKeys(octree_, sensor_origin, coords, key_ray, resolution_fractor)) {
+    if (computeRayKeys(octree_local_, sensor_origin, coords, key_ray, resolution_fractor)) {
 
       for (octomap::KeyRay::iterator it2 = key_ray.begin(), end = key_ray.end(); it2 != end; ++it2) {
 
@@ -509,26 +594,61 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
     }
   }
 
-  octomap::OcTreeNode* root = octree_->getRoot();
+  octomap::OcTreeNode* root = octree_local_->getRoot();
 
   bool got_root = root ? true : false;
 
   if (!got_root) {
-    octomap::OcTreeKey key = octree_->coordToKey(0, 0, 0, octree_->getTreeDepth());
-    octree_->setNodeValue(key, 0.0);
+    octomap::OcTreeKey key = octree_local_->coordToKey(0, 0, 0, octree_local_->getTreeDepth());
+    octree_local_->setNodeValue(key, 0.0);
   }
 
   // FREE CELLS
   for (octomap::KeySet::iterator it = free_cells.begin(), end = free_cells.end(); it != end; ++it) {
-    octomap::OcTreeNode* node = touchNode(octree_, *it, octree_->getTreeDepth() - resolution_fractor);
-    octree_->updateNodeLogOdds(node, octree_->getProbMissLog());
+    octomap::OcTreeNode* node = touchNode(octree_local_, *it, octree_local_->getTreeDepth() - resolution_fractor);
+    octree_local_->updateNodeLogOdds(node, octree_local_->getProbMissLog());
   }
 
 
   // OCCUPIED CELLS
   for (octomap::KeySet::iterator it = occupied_cells.begin(), end = occupied_cells.end(); it != end; it++) {
-    octomap::OcTreeNode* node = touchNode(octree_, *it, octree_->getTreeDepth() - resolution_fractor);
-    octree_->updateNodeLogOdds(node, octree_->getProbHitLog());
+    octomap::OcTreeNode* node = touchNode(octree_local_, *it, octree_local_->getTreeDepth() - resolution_fractor);
+    octree_local_->updateNodeLogOdds(node, octree_local_->getProbHitLog());
+  }
+
+  // CROP THE MAP AROUND THE ROBOT
+  float x        = sensor_origin.x();
+  float y        = sensor_origin.y();
+  float z        = sensor_origin.z();
+  float width_2  = float(local_map_width) / float(2.0);
+  float height_2 = float(local_map_height) / float(2.0);
+
+  octomap::point3d roi_min(x - width_2, y - width_2, z - height_2);
+  octomap::point3d roi_max(x + width_2, y + width_2, z + height_2);
+
+  std::shared_ptr<OcTree_t> from;
+  std::shared_ptr<OcTree_t> to;
+
+  if (octree_local_idx_ == 0) {
+    from              = octree_local_0_;
+    octree_local_     = octree_local_1_;
+    octree_local_idx_ = 1;
+  } else {
+    from              = octree_local_1_;
+    octree_local_     = octree_local_0_;
+    octree_local_idx_ = 0;
+  }
+
+  octree_local_->clear();
+
+  copyInsideBBX2(from, local_resolution_fractor_, octree_local_, local_resolution_fractor_, roi_min, roi_max);
+
+  rclcpp::Time time_end = get_clock()->now();
+
+  {
+    std::scoped_lock lock(mutex_local_map_duty_);
+
+    local_map_duty_ += (time_end - time_start).seconds();
   }
 }
 
@@ -536,8 +656,8 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
 
 /* copyInsideBBX2() //{ */
 
-bool OctomapServer::copyInsideBBX2(std::shared_ptr<OcTree_t>& from, std::shared_ptr<OcTree_t>& to, const octomap::point3d& p_min,
-                                   const octomap::point3d& p_max) {
+bool OctomapServer::copyInsideBBX2(std::shared_ptr<OcTree_t>& from, const int& from_fractor, std::shared_ptr<OcTree_t>& to, const int& to_fractor,
+                                   const octomap::point3d& p_min, const octomap::point3d& p_max) {
 
   octomap::OcTreeKey minKey, maxKey;
 
@@ -554,7 +674,8 @@ bool OctomapServer::copyInsideBBX2(std::shared_ptr<OcTree_t>& from, std::shared_
     to->setNodeValue(key, 1.0);
   }
 
-  for (OcTree_t::leaf_bbx_iterator it = from->begin_leafs_bbx(p_min, p_max, from->getTreeDepth() - resolution_fractor_), end = from->end_leafs_bbx(); it != end;
+  // iterate over leafs of the original "from" tree (up to the desired fractor depth)
+  for (OcTree_t::leaf_bbx_iterator it = from->begin_leafs_bbx(p_min, p_max, from->getTreeDepth() - from_fractor), end = from->end_leafs_bbx(); it != end;
        ++it) {
 
     octomap::OcTreeNode* orig_node = it.operator->();
@@ -566,6 +687,18 @@ bool OctomapServer::copyInsideBBX2(std::shared_ptr<OcTree_t>& from, std::shared_
     node->setValue(orig_node->getValue());
   }
 
+  // update the region the the fractor of the global map
+  if (to_fractor > from_fractor) {
+
+    // iterate over leafs of the original "from" tree (up to the desired fractor depth)
+    for (OcTree_t::leaf_bbx_iterator it = to->begin_leafs_bbx(p_min, p_max, to->getTreeDepth() - to_fractor), end = to->end_leafs_bbx(); it != end; ++it) {
+
+      octomap::OcTreeNode* orig_node = it.operator->();
+
+      eatChildren(to, orig_node);
+    }
+  }
+
   if (!got_root) {
     octomap::OcTreeKey key = to->coordToKey(p_min.x() - to->getResolution() * 2.0, p_min.y(), p_min.z(), to->getTreeDepth());
     to->deleteNode(key, to->getTreeDepth());
@@ -575,6 +708,46 @@ bool OctomapServer::copyInsideBBX2(std::shared_ptr<OcTree_t>& from, std::shared_
 }
 
 /* //} */
+
+/* eatChildren () //{ */
+void OctomapServer::eatChildren(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node) {
+
+  if (!octree->nodeHasChildren(node)) {
+    return;
+  }
+
+  node->setValue(eatChildrenRecursive(octree, node));
+}
+//}
+
+/* eatChildrenRecursive () //{ */
+double OctomapServer::eatChildrenRecursive(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node) {
+
+  if (!octree->nodeHasChildren(node)) {
+    return node->getValue();
+  }
+
+  double max_value = -1.0;
+
+  for (unsigned int i = 0; i < 8; i++) {
+
+    if (octree->nodeChildExists(node, i)) {
+
+      octomap::OcTreeNode* child = octree->getNodeChild(node, i);
+
+      double node_value = eatChildrenRecursive(octree, child);
+
+      if (node_value > max_value) {
+        max_value = node_value;
+      }
+
+      octree->deleteNodeChild(node, i);
+    }
+  }
+
+  return max_value;
+}
+//}
 
 /* computeRayKeys() //{ */
 bool OctomapServer::computeRayKeys(std::shared_ptr<OcTree_t>& octree, const octomap::point3d& origin, const octomap::point3d& end, octomap::KeyRay& ray,
@@ -692,44 +865,62 @@ bool OctomapServer::computeRayKeys(std::shared_ptr<OcTree_t>& octree, const octo
 }
 //}
 
-/* eatChildren () //{ */
-void OctomapServer::eatChildren(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node) {
+/* copyLocalMap() //{ */
 
-  if (!octree->nodeHasChildren(node)) {
-    return;
+bool OctomapServer::copyLocalMap(std::shared_ptr<OcTree_t>& from, const int& from_fractor, std::shared_ptr<OcTree_t>& to, const int& to_fractor) {
+
+  octomap::OcTreeKey minKey, maxKey;
+
+  octomap::OcTreeNode* root = to->getRoot();
+
+  bool got_root = root ? true : false;
+
+  if (!got_root) {
+    octomap::OcTreeKey key = to->coordToKey(0, 0, 0, to->getTreeDepth());
+    to->setNodeValue(key, 1.0);
   }
 
-  node->setValue(eatChildrenRecursive(octree, node));
-}
-//}
+  // iterate over leafs of the original "from" tree (up to the desired fractor depth)
+  for (OcTree_t::leaf_iterator it = from->begin_leafs(from->getTreeDepth() - from_fractor), end = from->end_leafs(); it != end; ++it) {
 
-/* eatChildrenRecursive () //{ */
-double OctomapServer::eatChildrenRecursive(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node) {
+    octomap::OcTreeNode* orig_node = it.operator->();
 
-  if (!octree->nodeHasChildren(node)) {
-    return node->getValue();
+    eatChildren(from, orig_node);
+
+    octomap::OcTreeKey   k    = it.getKey();
+    octomap::OcTreeNode* node = touchNode(to, k, it.getDepth());
+    node->setValue(orig_node->getValue());
   }
 
-  double max_value = -1.0;
+  // update the region the the fractor of the global map
+  if (to_fractor > from_fractor) {
 
-  for (unsigned int i = 0; i < 8; i++) {
+    double min_x, min_y, min_z;
+    double max_x, max_y, max_z;
 
-    if (octree->nodeChildExists(node, i)) {
+    from->getMetricMin(min_x, min_y, min_z);
+    from->getMetricMax(max_x, max_y, max_z);
 
-      octomap::OcTreeNode* child = octree->getNodeChild(node, i);
+    octomap::point3d p_min(min_x, min_y, min_z);
+    octomap::point3d p_max(max_x, max_y, max_z);
 
-      double node_value = eatChildrenRecursive(octree, child);
+    // iterate over leafs of the original "from" tree (up to the desired fractor depth)
+    for (OcTree_t::leaf_bbx_iterator it = to->begin_leafs_bbx(p_min, p_max, to->getTreeDepth() - to_fractor), end = to->end_leafs_bbx(); it != end; ++it) {
 
-      if (node_value > max_value) {
-        max_value = node_value;
-      }
+      octomap::OcTreeNode* orig_node = it.operator->();
 
-      octree->deleteNodeChild(node, i);
+      eatChildren(to, orig_node);
     }
   }
 
-  return max_value;
+  if (!got_root) {
+    octomap::OcTreeKey key = to->coordToKey(0, 0, 0, to->getTreeDepth());
+    to->deleteNode(key, to->getTreeDepth());
+  }
+
+  return true;
 }
+
 //}
 
 /* touchNode() //{ */
@@ -766,17 +957,6 @@ octomap::OcTreeNode* OctomapServer::touchNodeRecurs(std::shared_ptr<OcTree_t>& o
   else {
 
     eatChildren(octree, node);
-
-    // destroy all children
-    /* for (int i = 0; i < 8; i++) { */
-
-    /*   if (octree->nodeChildExists(node, i)) { */
-
-    /*     auto child = octree->getNodeChild(node, i); */
-
-    /*     octree->deleteNodeChild(node, i); */
-    /*   } */
-    /* } */
 
     return node;
   }
@@ -843,63 +1023,6 @@ bool OctomapServer::translateMap(std::shared_ptr<OcTree_t>& octree, const double
   RCLCPP_INFO(get_logger(), "[OctomapServer]: map translated");
 
   return true;
-}
-
-//}
-
-/* createLocalMap() //{ */
-
-bool OctomapServer::createLocalMap(const std::string frame_id, const double horizontal_distance, const double vertical_distance,
-                                   std::shared_ptr<OcTree_t>& octree) {
-
-  std::scoped_lock lock(mutex_octree_);
-
-  rclcpp::Time time_start = get_clock()->now();
-
-  geometry_msgs::msg::TransformStamped sensorToWorldTf;
-  try {
-    sensorToWorldTf = tf_buffer_->lookupTransform(_world_frame_, frame_id, rclcpp::Time(0));
-  }
-  catch (...) {
-    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: createLocalMap(): could not find tf from %s to %s", frame_id.c_str(),
-                         _world_frame_.c_str());
-    return false;
-  }
-
-  double robot_x = sensorToWorldTf.transform.translation.x;
-  double robot_y = sensorToWorldTf.transform.translation.y;
-  double robot_z = sensorToWorldTf.transform.translation.z;
-
-  bool success = true;
-
-  // clear the old local map
-  octree->clear();
-
-  const octomap::point3d p_min =
-      octomap::point3d(float(robot_x - horizontal_distance), float(robot_y - horizontal_distance), float(robot_z - vertical_distance));
-  const octomap::point3d p_max =
-      octomap::point3d(float(robot_x + horizontal_distance), float(robot_y + horizontal_distance), float(robot_z + vertical_distance));
-
-  success = copyInsideBBX2(octree_, octree, p_min, p_max);
-
-  octree->setProbHit(octree->getProbHit());
-  octree->setProbMiss(octree->getProbMiss());
-  octree->setClampingThresMin(octree->getClampingThresMinLog());
-  octree->setClampingThresMax(octree->getClampingThresMaxLog());
-
-  {
-    std::scoped_lock lock(mutex_time_local_map_processing_);
-    rclcpp::Time     time_end       = get_clock()->now();
-    time_last_local_map_processing_ = (time_end - time_start).seconds();
-
-    if (time_last_local_map_processing_ > ((1.0 / _local_map_rate_) * _local_map_max_computation_duty_cycle_)) {
-      RCLCPP_ERROR_THROTTLE(get_logger(), *get_clock(), 5000, "[OctomapServer]: local map creation time = %.3f sec", time_last_local_map_processing_);
-    } else {
-      RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 5000, "[OctomapServer]: local map creation time = %.3f sec", time_last_local_map_processing_);
-    }
-  }
-
-  return success;
 }
 
 //}
