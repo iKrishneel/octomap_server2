@@ -35,7 +35,6 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_msgs REQUIRED)
 find_package(laser_geometry REQUIRED)
-find_package(fog_lib REQUIRED)
 
 find_package(Eigen3 REQUIRED)
 set(Eigen_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIRS})
@@ -87,7 +86,6 @@ ament_target_dependencies(octomap_server2
   tf2_msgs
   tf2
   laser_geometry
-  fog_lib
   )
 
 target_link_libraries(octomap_server2 ${EIGEN3_LIBRARIES} ${PCL_LIBRARIES} ${OCTOMAP_LIBRARIES})

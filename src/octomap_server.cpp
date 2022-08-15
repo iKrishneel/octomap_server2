@@ -1,6 +1,5 @@
 #include <octomap_server2/octomap_server.hpp>
 
-using namespace fog_lib;
 namespace octomap_server
 {
 
@@ -1048,6 +1047,25 @@ rclcpp::CallbackGroup::SharedPtr OctomapServer::new_cbk_grp() {
   return new_group;
 }
 //}
+
+
+/* parse_param() //{ */
+// just a util function for loading parameters
+  template <class T>
+bool OctomapServer::parse_param(const std::string &param_name, T &param_dest, rclcpp::Node& node)
+{
+  node.declare_parameter<T>(param_name); 
+  if (!node.get_parameter(param_name, param_dest))
+  {
+    RCLCPP_ERROR(node.get_logger(), "Could not load param '%s'", param_name.c_str());
+    return false;
+  }
+  else
+  {
+    RCLCPP_INFO_STREAM(node.get_logger(), "Loaded '" << param_name << "' = '" << param_dest << "'");
+  }
+  return true;
+}
 
 }  // namespace octomap_server
 

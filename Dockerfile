@@ -8,8 +8,6 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
     libpcl-dev
 
 COPY . /main_ws/src/
-COPY misc/ros-galactic-fog-lib_0.1.0-0focal_amd64.deb /tmp/ros-galactic-fog-lib_0.1.0-0focal_amd64.deb
-RUN dpkg -i /tmp/ros-galactic-fog-lib_0.1.0-0focal_amd64.deb
 # RUN ls /etc/ros/rosdep/sources.list.d
 # RUN ls /packaging/
 # RUN cat /etc/ros/rosdep/sources.list.d/51-fogsw-module.list
@@ -36,9 +34,6 @@ FROM ghcr.io/tiiuae/fog-ros-baseimage:sha-3dcb78d
 ENTRYPOINT /entrypoint.sh
 
 COPY entrypoint.sh /entrypoint.sh
-
-COPY misc/libvtk7-qt-dev-hack_1.0_all.deb /tmp/libvtk7-qt-dev-hack_1.0_all.deb
-COPY misc/ros-galactic-fog-lib_0.1.0-0focal_amd64.deb /tmp/ros-galactic-fog-lib_0.1.0-0focal_amd64.deb
 
 # prevent libpcl-dev from pulling in a full graphical environment.
 # produced with these instructions: https://askubuntu.com/a/656153

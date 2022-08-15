@@ -67,7 +67,6 @@
 
 #include <laser_geometry/laser_geometry.hpp>
 
-#include <fog_lib/params.h>
 #include "octomap_server2/octomap_server.hpp"
 
 #include <cmath>
@@ -198,6 +197,9 @@ private:
   std::vector<rclcpp::CallbackGroup::SharedPtr> callback_groups_;
   // new callback groups have to be initialized using this function to be saved into callback_groups_
   rclcpp::CallbackGroup::SharedPtr new_cbk_grp();
+
+  template<class T>
+    bool parse_param(const std::string &param_name, T &param_dest, rclcpp::Node& node);
 
   bool        _simulation_;
   std::string _uav_name_;
