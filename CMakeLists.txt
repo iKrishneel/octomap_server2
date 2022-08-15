@@ -30,6 +30,7 @@ find_package(pcl_ros REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(octomap REQUIRED)
+find_package(octomap_ros REQUIRED)
 find_package(octomap_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -46,19 +47,6 @@ include_directories(
   ${PCL_INCLUDE_DIRS}
   )
 
-## --------------------------------------------------------------
-## |                     Octomap conversions                    |
-## --------------------------------------------------------------
-
-add_library(OctomapConversions SHARED
-  src/conversions.cpp
-  )
-
-ament_target_dependencies(OctomapConversions
-  rclcpp
-  )
-
-ament_export_libraries(OctomapConversions)
 
 ## --------------------------------------------------------------
 ## |                       Octomap server                       |
@@ -80,6 +68,7 @@ ament_target_dependencies(octomap_server2
   geometry_msgs
   std_srvs
   octomap
+  octomap_ros
   octomap_msgs
   message_filters
   tf2_ros
@@ -109,7 +98,6 @@ install(
 ament_export_include_directories(include)
 install(
   TARGETS
-  OctomapConversions
   octomap_server2
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib

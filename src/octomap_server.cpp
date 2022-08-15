@@ -1,5 +1,7 @@
 #include <octomap_server2/octomap_server.hpp>
 
+#include <octomap_ros/conversions.hpp>
+
 namespace octomap_server
 {
 
@@ -502,7 +504,12 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& robotOri
 
   RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: insertPointCloud()");
 
-  const octomap::point3d sensor_origin      = octomap::pointTfToOctomap(sensorOriginTf);
+  geometry_msgs::msg::Point msg_sensorOriginTf;
+  msg_sensorOriginTf.x = sensorOriginTf.x;
+  msg_sensorOriginTf.y = sensorOriginTf.y;
+  msg_sensorOriginTf.z = sensorOriginTf.z;
+
+  const octomap::point3d sensor_origin      = octomap::pointMsgToOctomap(msg_sensorOriginTf);
   const float            free_space_ray_len = std::min(float(_unknown_rays_distance_), float(sqrt(2 * pow(local_map_width / 2.0, 2) + pow(local_map_height / 2.0, 2))));
 
   double coarse_res = octree_local_->getResolution() * pow(2.0, resolution_fractor);
