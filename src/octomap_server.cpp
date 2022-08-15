@@ -169,6 +169,16 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
 
   Eigen::Matrix4f                      sensorToWorld;
   geometry_msgs::msg::TransformStamped sensorToWorldTf;
+  geometry_msgs::msg::TransformStamped robotToWorldTf;
+
+  try {
+    robotToWorldTf = tf_buffer_->lookupTransform(_world_frame_, _robot_frame_, rclcpp::Time(0));
+  }
+  catch (...) {
+    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: callbackLaserScan(): could not find tf from %s to %s", _robot_frame_.c_str(),
+                         _world_frame_.c_str());
+    return;
+  }
 
   try {
     sensorToWorldTf = tf_buffer_->lookupTransform(_world_frame_, msg->header.frame_id, rclcpp::Time(0));
@@ -220,7 +230,7 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
   pc->header.frame_id              = _world_frame_;
   free_vectors_pc->header.frame_id = _world_frame_;
 
-  insertPointCloud(sensorToWorldTf.transform.translation, pc, free_vectors_pc);
+  insertPointCloud(robotToWorldTf.transform.translation, sensorToWorldTf.transform.translation, pc, free_vectors_pc);
 
   last_time_laser_scan_ = msg->header.stamp;
 }
@@ -474,8 +484,8 @@ void OctomapServer::timerLocalMapResizer() {
 
 /* insertPointCloud() //{ */
 
-void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOriginTf, const PCLPointCloud::ConstPtr& cloud,
-                                     const PCLPointCloud::ConstPtr& free_vectors_cloud) {
+void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& robotOriginTf, const geometry_msgs::msg::Vector3& sensorOriginTf, 
+                                     const PCLPointCloud::ConstPtr& cloud,const PCLPointCloud::ConstPtr& free_vectors_cloud) {
 
   std::scoped_lock lock(mutex_octree_local_);
   rclcpp::Time time_start = get_clock()->now();
@@ -544,7 +554,7 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
     // check if the ray intersects a cell in the occupied list
     if (computeRayKeys(octree_local_, sensor_origin, measured_point, keyRay, resolution_fractor)) {
 
-      octomap::KeyRay::iterator alterantive_ray_end = keyRay.end();
+      octomap::KeyRay::iterator alternative_ray_end = keyRay.end();
 
       for (octomap::KeyRay::iterator it2 = keyRay.begin(), end = keyRay.end(); it2 != end; ++it2) {
 
@@ -556,9 +566,9 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
           if (node && octree_local_->isNodeOccupied(node)) {
 
             if (it2 == keyRay.begin()) {
-              alterantive_ray_end = keyRay.begin();  // special case
+              alternative_ray_end = keyRay.begin();  // special case
             } else {
-              alterantive_ray_end = it2 - 1;
+              alternative_ray_end = it2 - 1;
             }
 
             break;
@@ -566,7 +576,7 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
         }
       }
 
-      free_cells.insert(keyRay.begin(), alterantive_ray_end);
+      free_cells.insert(keyRay.begin(), alternative_ray_end);
     }
   }
 
@@ -600,7 +610,7 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
 
   if (!got_root) {
     octomap::OcTreeKey key = octree_local_->coordToKey(0, 0, 0, octree_local_->getTreeDepth());
-    octree_local_->setNodeValue(key, 0.0);
+    octree_local_->setNodeValue(key, 1.0);
   }
 
   // FREE CELLS
@@ -615,6 +625,10 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
     octomap::OcTreeNode* node = touchNode(octree_local_, *it, octree_local_->getTreeDepth() - resolution_fractor);
     octree_local_->updateNodeLogOdds(node, octree_local_->getProbHitLog());
   }
+
+  // CLAIM THAT CELL, IN WHICH ROBOT IS, IS FREE 
+  octomap::OcTreeKey robot_key = octree_local_->coordToKey(robotOriginTf.x, robotOriginTf.y, robotOriginTf.z);
+  octree_local_->updateNode(robot_key, false);
 
   // CROP THE MAP AROUND THE ROBOT
   float x        = sensor_origin.x();

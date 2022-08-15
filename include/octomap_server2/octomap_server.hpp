@@ -278,8 +278,8 @@ private:
 
   bool createLocalMap(const std::string frame_id, const double horizontal_distance, const double vertical_distance, std::shared_ptr<OcTree_t>& octree);
 
-  virtual void insertPointCloud(const geometry_msgs::msg::Vector3& sensorOrigin, const PCLPointCloud::ConstPtr& cloud,
-                                const PCLPointCloud::ConstPtr& free_cloud);
+  virtual void insertPointCloud(const geometry_msgs::msg::Vector3& robotOrigin, const geometry_msgs::msg::Vector3& sensorOrigin, 
+                                const PCLPointCloud::ConstPtr& cloud, const PCLPointCloud::ConstPtr& free_cloud);
 
   // sensor model
   double _probHit_;
