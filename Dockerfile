@@ -35,6 +35,8 @@ ENTRYPOINT /entrypoint.sh
 
 COPY entrypoint.sh /entrypoint.sh
 
+COPY misc/libvtk7-qt-dev-hack_1.0_all.deb /tmp/libvtk7-qt-dev-hack_1.0_all.deb
+
 # prevent libpcl-dev from pulling in a full graphical environment.
 # produced with these instructions: https://askubuntu.com/a/656153
 RUN dpkg -i /tmp/libvtk7-qt-dev-hack_1.0_all.deb
