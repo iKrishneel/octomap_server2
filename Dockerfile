@@ -38,7 +38,6 @@ COPY entrypoint.sh /entrypoint.sh
 # prevent libpcl-dev from pulling in a full graphical environment.
 # produced with these instructions: https://askubuntu.com/a/656153
 RUN dpkg -i /tmp/libvtk7-qt-dev-hack_1.0_all.deb
-RUN dpkg -i /tmp/ros-galactic-fog-lib_0.1.0-0focal_amd64.deb
 
 COPY --from=builder /main_ws/ros-*-octomap-server2_*_amd64.deb /octomap-server.deb
 
