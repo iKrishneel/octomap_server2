@@ -2,7 +2,7 @@
 Changelog for package octomap_server2
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
+0.1.0 (2022-08-15)
 -----------
 * claim the robot cell as unoccupied
 * turn off global map creation and sharing by default
