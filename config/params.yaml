@@ -26,7 +26,7 @@ local_map:
 global_map:
 
   # should create a global map from the local map?
-  enabled: true
+  enabled: false
 
   # the publisher rate of the global map
   publisher_rate: 1.0 # [Hz]
