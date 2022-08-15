@@ -8,17 +8,7 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
     libpcl-dev
 
 COPY . /main_ws/src/
-# RUN ls /etc/ros/rosdep/sources.list.d
-# RUN ls /packaging/
-# RUN cat /etc/ros/rosdep/sources.list.d/51-fogsw-module.list
-# RUN cat /etc/ros/rosdep/sources.list.d/20-default.list
-ARG rosdepYamlPath=/packaging/rosdep.yaml
-RUN  if [ -e ${rosdepYamlPath} ]; then \ 
-    echo "fog_lib:" >> $rosdepYamlPath && \
-    echo "    ubuntu: ros-galactic-fog-lib" >> $rosdepYamlPath && \
-    echo "yaml file://${rosdepYamlPath}" > /etc/ros/rosdep/sources.list.d/51-fogsw-module.list; \
-    fi;
-RUN cat $rosdepYamlPath
+
 # this:
 # 1) builds the application
 # 2) packages the application as .deb & writes it to /main_ws/
