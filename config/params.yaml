@@ -1,7 +1,7 @@
 map_while_grounded: true
 
 # resolution on the lowest level (fractor = 0, depth = max depth)
-resolution: 0.05 # [m]
+resolution: 0.2 # [m]
 
 local_map:
 
@@ -15,7 +15,7 @@ local_map:
   # current_resolution = resolution * 2 ^ fractor
   # example for initial_fractor = 3 and resolution 0.05 : 
   #           0.05 * 2^3 = 0.05 * 8 = 0.4 
-  initial_fractor: 3
+  initial_fractor: 0
 
   # the publisher rate of the local map
   publisher_rate: 10.0 # [Hz]
@@ -26,7 +26,7 @@ local_map:
 global_map:
 
   # should create a global map from the local map?
-  enabled: false
+  enabled: true
 
   # the publisher rate of the global map
   publisher_rate: 1.0 # [Hz]

@@ -627,7 +627,6 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& sensorOr
   octomap::point3d roi_max(x + width_2, y + width_2, z + height_2);
 
   std::shared_ptr<OcTree_t> from;
-  std::shared_ptr<OcTree_t> to;
 
   if (octree_local_idx_ == 0) {
     from              = octree_local_0_;
