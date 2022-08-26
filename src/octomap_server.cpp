@@ -18,6 +18,7 @@ OctomapServer::OctomapServer(rclcpp::NodeOptions options) : Node("octomap_server
   loaded_successfully &= parse_param("local_map.size.height", _local_map_height_, *this);
   loaded_successfully &= parse_param("local_map.publisher_rate", _local_map_publisher_rate_, *this);
   loaded_successfully &= parse_param("local_map.publish_full", _local_map_publish_full_, *this);
+  loaded_successfully &= parse_param("local_map.compress", _local_map_compress_, *this);
   loaded_successfully &= parse_param("local_map.publish_binary", _local_map_publish_binary_, *this);
   
   loaded_successfully &= parse_param("global_map.publisher_rate", _global_map_publisher_rate_, *this);
@@ -281,10 +282,6 @@ void OctomapServer::timerGlobalMapPublisher() {
     return;
   }
 
-  /* if (_global_map_compress_) { */
-  /*   octree_global_->prune(); */
-  /* } */
-
   if (_global_map_publish_full_) {
 
     octomap_msgs::msg::Octomap om;
@@ -353,6 +350,11 @@ void OctomapServer::timerGlobalMapCreator() {
     std::scoped_lock lock(mutex_octree_global_);
 
     copyLocalMap(local_map_tmp_, octree_global_);
+
+    if (_global_map_compress_) {
+      octree_global_->prune();
+    }
+
   }
 }
 
@@ -670,6 +672,11 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& robotOri
     /* rclcpp::Time time_end_copy = get_clock()->now(); */
     /* RCLCPP_INFO(this->get_logger(), "[map]: copy time: %.8f",(time_end_copy - time_start_copy).seconds()); */
   /* } */
+
+  if (_local_map_compress_) {
+    octree_local_->prune();
+  }
+
 
   rclcpp::Time time_end = get_clock()->now();
   {

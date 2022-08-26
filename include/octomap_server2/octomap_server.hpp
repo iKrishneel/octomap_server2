@@ -203,6 +203,7 @@ private:
   std::string _robot_frame_;
   double      octree_resolution_;
   bool        _global_map_compress_;
+  bool        _local_map_compress_;
   std::string _map_path_;
 
   int        _local_map_width_;

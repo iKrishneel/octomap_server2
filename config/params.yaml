@@ -13,6 +13,9 @@ local_map:
   # the publisher rate of the local map
   publisher_rate: 10.0 # [Hz]
 
+  # should we prune the map?
+  compress: true
+
   publish_full: false # should publish map with full probabilities?
   publish_binary: true # should publish map with binary occupancy?
 
@@ -27,7 +30,7 @@ global_map:
   # the rate of inserting the local map into the global map
   creation_rate: 1.0 # [Hz]
 
-  # should we prune the map before publishing?
+  # should we prune the map?
   compress: true
 
   publish_full: false # should publish map with full probabilities?
