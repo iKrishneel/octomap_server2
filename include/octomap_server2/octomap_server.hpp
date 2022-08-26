@@ -84,38 +84,10 @@ struct xyz_lut_t
   vec3s_t offsets;     // a matrix of offset vectors
 };
 
-/* typedef struct */
-/* { */
-/*   double max_range; */
-/*   int    horizontal_rays; */
-/* } SensorParams2DLidar_t; */
 
-/* typedef struct */
-/* { */
-/*   double max_range; */
-/*   double vertical_fov; */
-/*   int    vertical_rays; */
-/*   int    horizontal_rays; */
-/* } SensorParams3DLidar_t; */
-
-/* typedef struct */
-/* { */
-/*   double max_range; */
-/*   double vertical_fov; */
-/*   double horizontal_fov; */
-/*   int    vertical_rays; */
-/*   int    horizontal_rays; */
-/* } SensorParamsDepthCam_t; */
-
-#ifdef COLOR_OCTOMAP_SERVER
-using PCLPoint      = pcl::PointXYZRGB;
-using PCLPointCloud = pcl::PointCloud<PCLPoint>;
-using OcTree_t      = octomap::ColorOcTree;
-#else
 using PCLPoint      = pcl::PointXYZ;
 using PCLPointCloud = pcl::PointCloud<PCLPoint>;
 using OcTree_t      = octomap::OcTree;
-#endif
 
 typedef enum
 {
@@ -222,7 +194,7 @@ private:
   int                       octree_local_idx_ = 0;
   std::mutex                mutex_octree_local_;
 
-  std::atomic<bool> octrees_initialized_;
+  std::atomic<bool> octrees_initialized_ = false;
 
   double     avg_time_cloud_insertion_ = 0;
   std::mutex mutex_avg_time_cloud_insertion_;
@@ -247,34 +219,20 @@ private:
   bool   _unknown_rays_clear_occupied_;
   double _unknown_rays_distance_;
 
-  int        local_resolution_fractor_;
-  int        global_resolution_fractor_;
-  std::mutex mutex_resolution_fractor_;
-
   laser_geometry::LaserProjection projector_;
 
-  bool copyInsideBBX2(std::shared_ptr<OcTree_t>& from, const int& from_fractor, std::shared_ptr<OcTree_t>& to, const int& to_fractor,
-                      const octomap::point3d& p_min, const octomap::point3d& p_max);
+  bool clearOutsideBBX(std::shared_ptr<OcTree_t>& octree, const octomap::point3d& p_min, const octomap::point3d& p_max);
 
-  bool copyLocalMap(std::shared_ptr<OcTree_t>& from, const int& from_fractor, std::shared_ptr<OcTree_t>& to, const int& to_fractor);
+  bool copyInsideBBX2(std::shared_ptr<OcTree_t>& from, std::shared_ptr<OcTree_t>& to, const octomap::point3d& p_min, const octomap::point3d& p_max);
 
-  bool computeRayKeys(std::shared_ptr<OcTree_t>& octree, const octomap::point3d& origin, const octomap::point3d& end, octomap::KeyRay& ray,
-                      const double fractor);
+  bool copyLocalMap(std::shared_ptr<OcTree_t>& from, std::shared_ptr<OcTree_t>& to);
 
-  void eatChildren(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node);
-
-  double eatChildrenRecursive(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node);
-
-  void setNodeValueDepth(std::shared_ptr<OcTree_t>& octree, const octomap::OcTreeKey& key, float log_odds_value, int depth, bool lazy_eval);
+  bool computeRayKeys(std::shared_ptr<OcTree_t>& octree, const octomap::point3d& origin, const octomap::point3d& end, octomap::KeyRay& ray);
 
   octomap::OcTreeNode* touchNodeRecurs(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node, const octomap::OcTreeKey& key, unsigned int depth,
                                        unsigned int max_depth);
 
   octomap::OcTreeNode* touchNode(std::shared_ptr<OcTree_t>& octree, const octomap::OcTreeKey& key, unsigned int target_depth);
-
-  void expandNodeRecursive(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node, const unsigned int node_depth);
-
-  bool translateMap(std::shared_ptr<OcTree_t>& octree, const double& x, const double& y, const double& z);
 
   bool createLocalMap(const std::string frame_id, const double horizontal_distance, const double vertical_distance, std::shared_ptr<OcTree_t>& octree);
 

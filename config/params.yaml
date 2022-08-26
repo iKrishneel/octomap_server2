@@ -10,13 +10,6 @@ local_map:
     width: 20 # [m]
     height: 10 # [m]
 
-  # fractor = how many levels from the lowest level (the highest res)
-  #           should we work on
-  # current_resolution = resolution * 2 ^ fractor
-  # example for initial_fractor = 3 and resolution 0.05 : 
-  #           0.05 * 2^3 = 0.05 * 8 = 0.4 
-  initial_fractor: 0
-
   # the publisher rate of the local map
   publisher_rate: 10.0 # [Hz]
 
@@ -33,11 +26,6 @@ global_map:
 
   # the rate of inserting the local map into the global map
   creation_rate: 1.0 # [Hz]
-
-  # fractor = how many levels from the lowest level (the higherst res)
-  #           should we work on
-  # current_resolution = resolution * 2 ^ fractor
-  initial_fractor: 0
 
   # should we prune the map before publishing?
   compress: true

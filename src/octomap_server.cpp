@@ -14,21 +14,18 @@ OctomapServer::OctomapServer(rclcpp::NodeOptions options) : Node("octomap_server
 
   /* parse params from config file //{ */
   loaded_successfully &= parse_param("map_while_grounded", _map_while_grounded_, *this);
-
+  loaded_successfully &= parse_param("local_map.size.width", _local_map_width_, *this);
+  loaded_successfully &= parse_param("local_map.size.height", _local_map_height_, *this);
+  loaded_successfully &= parse_param("local_map.publisher_rate", _local_map_publisher_rate_, *this);
+  loaded_successfully &= parse_param("local_map.publish_full", _local_map_publish_full_, *this);
+  loaded_successfully &= parse_param("local_map.publish_binary", _local_map_publish_binary_, *this);
+  
   loaded_successfully &= parse_param("global_map.publisher_rate", _global_map_publisher_rate_, *this);
   loaded_successfully &= parse_param("global_map.creation_rate", _global_map_creator_rate_, *this);
   loaded_successfully &= parse_param("global_map.enabled", _global_map_enabled_, *this);
   loaded_successfully &= parse_param("global_map.compress", _global_map_compress_, *this);
   loaded_successfully &= parse_param("global_map.publish_full", _global_map_publish_full_, *this);
   loaded_successfully &= parse_param("global_map.publish_binary", _global_map_publish_binary_, *this);
-  loaded_successfully &= parse_param("global_map.initial_fractor", global_resolution_fractor_, *this);
-
-  loaded_successfully &= parse_param("local_map.size.width", _local_map_width_, *this);
-  loaded_successfully &= parse_param("local_map.size.height", _local_map_height_, *this);
-  loaded_successfully &= parse_param("local_map.publisher_rate", _local_map_publisher_rate_, *this);
-  loaded_successfully &= parse_param("local_map.publish_full", _local_map_publish_full_, *this);
-  loaded_successfully &= parse_param("local_map.publish_binary", _local_map_publish_binary_, *this);
-  loaded_successfully &= parse_param("local_map.initial_fractor", local_resolution_fractor_, *this);
 
   local_map_width_ = _local_map_width_;
   local_map_height_ = _local_map_height_;
@@ -355,7 +352,7 @@ void OctomapServer::timerGlobalMapCreator() {
   {
     std::scoped_lock lock(mutex_octree_global_);
 
-    copyLocalMap(local_map_tmp_, local_resolution_fractor_, octree_global_, global_resolution_fractor_);
+    copyLocalMap(local_map_tmp_, octree_global_);
   }
 }
 
@@ -491,13 +488,11 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& robotOri
   std::scoped_lock lock(mutex_octree_local_);
   rclcpp::Time time_start = get_clock()->now();
 
-
-  double resolution_fractor;
   int local_map_width;
   int local_map_height;
+
   {
-    std::scoped_lock lck(mutex_resolution_fractor_, mutex_local_map_dimensions_);
-    resolution_fractor = local_resolution_fractor_;
+    std::scoped_lock lck(mutex_local_map_dimensions_);
     local_map_width = local_map_width_;
     local_map_height = local_map_height_;
   }
@@ -511,10 +506,6 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& robotOri
 
   const octomap::point3d sensor_origin      = octomap::pointMsgToOctomap(msg_sensorOriginTf);
   const float            free_space_ray_len = std::min(float(_unknown_rays_distance_), float(sqrt(2 * pow(local_map_width / 2.0, 2) + pow(local_map_height / 2.0, 2))));
-
-  double coarse_res = octree_local_->getResolution() * pow(2.0, resolution_fractor);
-
-  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: current resolution = %.2f m", coarse_res);
 
   octomap::KeySet occupied_cells;
   octomap::KeySet free_cells;
@@ -558,7 +549,7 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& robotOri
     measured_point = sensor_origin + (measured_point - sensor_origin).normalize() * std::min(free_space_ray_len, point_distance);
 
     // check if the ray intersects a cell in the occupied list
-    if (computeRayKeys(octree_local_, sensor_origin, measured_point, keyRay, resolution_fractor)) {
+    if (computeRayKeys(octree_local_, sensor_origin, measured_point, keyRay)) {
 
       octomap::KeyRay::iterator alternative_ray_end = keyRay.end();
 
@@ -592,7 +583,7 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& robotOri
     octomap::point3d coords = octree_local_->keyToCoord(*it);
 
     octomap::KeyRay key_ray;
-    if (computeRayKeys(octree_local_, sensor_origin, coords, key_ray, resolution_fractor)) {
+    if (computeRayKeys(octree_local_, sensor_origin, coords, key_ray)) {
 
       for (octomap::KeyRay::iterator it2 = key_ray.begin(), end = key_ray.end(); it2 != end; ++it2) {
 
@@ -621,15 +612,13 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& robotOri
 
   // FREE CELLS
   for (octomap::KeySet::iterator it = free_cells.begin(), end = free_cells.end(); it != end; ++it) {
-    octomap::OcTreeNode* node = touchNode(octree_local_, *it, octree_local_->getTreeDepth() - resolution_fractor);
-    octree_local_->updateNodeLogOdds(node, octree_local_->getProbMissLog());
+    octree_local_->updateNode(*it, octree_local_->getProbMissLog());
   }
 
 
   // OCCUPIED CELLS
   for (octomap::KeySet::iterator it = occupied_cells.begin(), end = occupied_cells.end(); it != end; it++) {
-    octomap::OcTreeNode* node = touchNode(octree_local_, *it, octree_local_->getTreeDepth() - resolution_fractor);
-    octree_local_->updateNodeLogOdds(node, octree_local_->getProbHitLog());
+    octree_local_->updateNode(*it, octree_local_->getProbHitLog());
   }
 
   // CLAIM THAT CELL, IN WHICH ROBOT IS, IS FREE 
@@ -646,24 +635,43 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& robotOri
   octomap::point3d roi_min(x - width_2, y - width_2, z - height_2);
   octomap::point3d roi_max(x + width_2, y + width_2, z + height_2);
 
-  std::shared_ptr<OcTree_t> from;
+  // The First way how to clear data outside of bounding box is to iterate throught all leafs and delete ones 
+  // that are outside. This is efficient for tree that has most of the data inside of the bounding box.
+  // This is more efficient for Rplidar sensor
+  {
+    /* rclcpp::Time time_start_crop = get_clock()->now(); */
 
-  if (octree_local_idx_ == 0) {
-    from              = octree_local_0_;
-    octree_local_     = octree_local_1_;
-    octree_local_idx_ = 1;
-  } else {
-    from              = octree_local_1_;
-    octree_local_     = octree_local_0_;
-    octree_local_idx_ = 0;
+    clearOutsideBBX(octree_local_, roi_min, roi_max);
+
+    /* rclcpp::Time time_end_crop = get_clock()->now(); */
+    /* RCLCPP_INFO(this->get_logger(), "[map]: crop time: %.8f",(time_end_crop - time_start_crop).seconds()); */
   }
 
-  octree_local_->clear();
+  // The second way how to clear data outside of bounding box is to copy all leafs inside of the bouding box 
+  // into new tree. This is efficient for tree that has the most of data outside of the bounding box.
+  /* { */
+    /* rclcpp::Time time_start_copy = get_clock()->now(); */
+    /* std::shared_ptr<OcTree_t> from; */
 
-  copyInsideBBX2(from, local_resolution_fractor_, octree_local_, local_resolution_fractor_, roi_min, roi_max);
+    /* if (octree_local_idx_ == 0) { */
+    /*   from              = octree_local_0_; */
+    /*   octree_local_     = octree_local_1_; */
+    /*   octree_local_idx_ = 1; */
+    /* } else { */
+    /*   from              = octree_local_1_; */
+    /*   octree_local_     = octree_local_0_; */
+    /*   octree_local_idx_ = 0; */
+    /* } */
+
+    /* octree_local_->clear(); */
+
+    /* copyInsideBBX2(from, octree_local_, roi_min, roi_max); */
+  
+    /* rclcpp::Time time_end_copy = get_clock()->now(); */
+    /* RCLCPP_INFO(this->get_logger(), "[map]: copy time: %.8f",(time_end_copy - time_start_copy).seconds()); */
+  /* } */
 
   rclcpp::Time time_end = get_clock()->now();
-
   {
     std::scoped_lock lock(mutex_local_map_duty_);
 
@@ -673,10 +681,37 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& robotOri
 
 //}
 
+/* clearOutsideBBX() //{ */
+
+bool OctomapServer::clearOutsideBBX(std::shared_ptr<OcTree_t>& octree, const octomap::point3d& p_min, const octomap::point3d& p_max) {
+
+  octomap::OcTreeKey minKey, maxKey;
+  if (!octree->coordToKeyChecked(p_min, minKey) || !octree->coordToKeyChecked(p_max, maxKey)) {
+    return false;
+  }
+
+  std::vector<std::pair<octomap::OcTreeKey, unsigned int>> keys;
+  for (octomap::OcTree::leaf_iterator it = octree->begin_leafs(), end = octree->end_leafs(); it != end; ++it) {
+    // check if outside of bbx:
+    octomap::OcTreeKey k = it.getKey();
+    if (k[0] < minKey[0] || k[1] < minKey[1] || k[2] < minKey[2] || k[0] > maxKey[0] || k[1] > maxKey[1] || k[2] > maxKey[2]) {
+      keys.push_back(std::make_pair(k, it.getDepth()));
+    }
+  }
+
+  for (auto k : keys) {
+    octree->deleteNode(k.first, k.second);
+  }
+
+  /* RCLCPP_INFO(this->get_logger(), "Number of voxels removed outside local area: %li", keys.size()); */
+  return true;
+}
+
+//}
+
 /* copyInsideBBX2() //{ */
 
-bool OctomapServer::copyInsideBBX2(std::shared_ptr<OcTree_t>& from, const int& from_fractor, std::shared_ptr<OcTree_t>& to, const int& to_fractor,
-                                   const octomap::point3d& p_min, const octomap::point3d& p_max) {
+bool OctomapServer::copyInsideBBX2(std::shared_ptr<OcTree_t>& from, std::shared_ptr<OcTree_t>& to, const octomap::point3d& p_min, const octomap::point3d& p_max) {
 
   octomap::OcTreeKey minKey, maxKey;
 
@@ -694,33 +729,13 @@ bool OctomapServer::copyInsideBBX2(std::shared_ptr<OcTree_t>& from, const int& f
   }
 
   // iterate over leafs of the original "from" tree (up to the desired fractor depth)
-  for (OcTree_t::leaf_bbx_iterator it = from->begin_leafs_bbx(p_min, p_max, from->getTreeDepth() - from_fractor), end = from->end_leafs_bbx(); it != end;
-       ++it) {
+  for (OcTree_t::leaf_bbx_iterator it = from->begin_leafs_bbx(p_min, p_max, from->getTreeDepth()), end = from->end_leafs_bbx(); it != end; ++it) {
 
     octomap::OcTreeNode* orig_node = it.operator->();
-
-    eatChildren(from, orig_node);
 
     octomap::OcTreeKey   k    = it.getKey();
     octomap::OcTreeNode* node = touchNode(to, k, it.getDepth());
     node->setValue(orig_node->getValue());
-  }
-
-  // update the region the the fractor of the global map
-  if (to_fractor > from_fractor) {
-
-    // iterate over leafs of the original "from" tree (up to the desired fractor depth)
-    for (OcTree_t::leaf_bbx_iterator it = to->begin_leafs_bbx(p_min, p_max, to->getTreeDepth() - to_fractor), end = to->end_leafs_bbx(); it != end; ++it) {
-
-      octomap::OcTreeNode* orig_node = it.operator->();
-
-      eatChildren(to, orig_node);
-    }
-  }
-
-  if (!got_root) {
-    octomap::OcTreeKey key = to->coordToKey(p_min.x() - to->getResolution() * 2.0, p_min.y(), p_min.z(), to->getTreeDepth());
-    to->deleteNode(key, to->getTreeDepth());
   }
 
   return true;
@@ -728,57 +743,15 @@ bool OctomapServer::copyInsideBBX2(std::shared_ptr<OcTree_t>& from, const int& f
 
 /* //} */
 
-/* eatChildren () //{ */
-void OctomapServer::eatChildren(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node) {
-
-  if (!octree->nodeHasChildren(node)) {
-    return;
-  }
-
-  node->setValue(eatChildrenRecursive(octree, node));
-}
-//}
-
-/* eatChildrenRecursive () //{ */
-double OctomapServer::eatChildrenRecursive(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node) {
-
-  if (!octree->nodeHasChildren(node)) {
-    return node->getValue();
-  }
-
-  double max_value = -1.0;
-
-  for (unsigned int i = 0; i < 8; i++) {
-
-    if (octree->nodeChildExists(node, i)) {
-
-      octomap::OcTreeNode* child = octree->getNodeChild(node, i);
-
-      double node_value = eatChildrenRecursive(octree, child);
-
-      if (node_value > max_value) {
-        max_value = node_value;
-      }
-
-      octree->deleteNodeChild(node, i);
-    }
-  }
-
-  return max_value;
-}
-//}
-
 /* computeRayKeys() //{ */
-bool OctomapServer::computeRayKeys(std::shared_ptr<OcTree_t>& octree, const octomap::point3d& origin, const octomap::point3d& end, octomap::KeyRay& ray,
-                                   const double fractor) {
+bool OctomapServer::computeRayKeys(std::shared_ptr<OcTree_t>& octree, const octomap::point3d& origin, const octomap::point3d& end, octomap::KeyRay& ray) {
 
   // see "A Faster Voxel Traversal Algorithm for Ray Tracing" by Amanatides & Woo
   // basically: DDA in 3D
 
   ray.reset();
 
-  int    step_multiplier = std::pow(2, fractor);
-  double resolution      = octree->getResolution() * step_multiplier;
+  double resolution      = octree->getResolution();
 
   octomap::OcTreeKey key_origin, key_end;
   if (!octree->coordToKeyChecked(origin, key_origin) || !octree->coordToKeyChecked(end, key_end)) {
@@ -848,7 +821,7 @@ bool OctomapServer::computeRayKeys(std::shared_ptr<OcTree_t>& octree, const octo
     }
 
     // advance in direction "dim"
-    current_key[dim] += step[dim] * step_multiplier;
+    current_key[dim] += step[dim];
     tMax[dim] += tDelta[dim];
 
 
@@ -886,7 +859,7 @@ bool OctomapServer::computeRayKeys(std::shared_ptr<OcTree_t>& octree, const octo
 
 /* copyLocalMap() //{ */
 
-bool OctomapServer::copyLocalMap(std::shared_ptr<OcTree_t>& from, const int& from_fractor, std::shared_ptr<OcTree_t>& to, const int& to_fractor) {
+bool OctomapServer::copyLocalMap(std::shared_ptr<OcTree_t>& from, std::shared_ptr<OcTree_t>& to) {
 
   octomap::OcTreeKey minKey, maxKey;
 
@@ -900,41 +873,13 @@ bool OctomapServer::copyLocalMap(std::shared_ptr<OcTree_t>& from, const int& fro
   }
 
   // iterate over leafs of the original "from" tree (up to the desired fractor depth)
-  for (OcTree_t::leaf_iterator it = from->begin_leafs(from->getTreeDepth() - from_fractor), end = from->end_leafs(); it != end; ++it) {
+  for (OcTree_t::leaf_iterator it = from->begin_leafs(from->getTreeDepth()), end = from->end_leafs(); it != end; ++it) {
 
     octomap::OcTreeNode* orig_node = it.operator->();
-
-    eatChildren(from, orig_node);
 
     octomap::OcTreeKey   k    = it.getKey();
     octomap::OcTreeNode* node = touchNode(to, k, it.getDepth());
     node->setValue(orig_node->getValue());
-  }
-
-  // update the region the the fractor of the global map
-  if (to_fractor > from_fractor) {
-
-    double min_x, min_y, min_z;
-    double max_x, max_y, max_z;
-
-    from->getMetricMin(min_x, min_y, min_z);
-    from->getMetricMax(max_x, max_y, max_z);
-
-    octomap::point3d p_min(min_x, min_y, min_z);
-    octomap::point3d p_max(max_x, max_y, max_z);
-
-    // iterate over leafs of the original "from" tree (up to the desired fractor depth)
-    for (OcTree_t::leaf_bbx_iterator it = to->begin_leafs_bbx(p_min, p_max, to->getTreeDepth() - to_fractor), end = to->end_leafs_bbx(); it != end; ++it) {
-
-      octomap::OcTreeNode* orig_node = it.operator->();
-
-      eatChildren(to, orig_node);
-    }
-  }
-
-  if (!got_root) {
-    octomap::OcTreeKey key = to->coordToKey(0, 0, 0, to->getTreeDepth());
-    to->deleteNode(key, to->getTreeDepth());
   }
 
   return true;
@@ -975,73 +920,8 @@ octomap::OcTreeNode* OctomapServer::touchNodeRecurs(std::shared_ptr<OcTree_t>& o
   // at last level, update node, end of recursion
   else {
 
-    eatChildren(octree, node);
-
     return node;
   }
-}
-
-//}
-
-/* expandNodeRecursive() //{ */
-
-void OctomapServer::expandNodeRecursive(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node, const unsigned int node_depth) {
-
-  if (node_depth < octree->getTreeDepth()) {
-
-    octree->expandNode(node);
-
-    for (int i = 0; i < 8; i++) {
-      auto child = octree->getNodeChild(node, i);
-
-      expandNodeRecursive(octree, child, node_depth + 1);
-    }
-
-  } else {
-    return;
-  }
-}
-
-//}
-
-/* translateMap() //{ */
-
-bool OctomapServer::translateMap(std::shared_ptr<OcTree_t>& octree, const double& x, const double& y, const double& z) {
-
-  RCLCPP_INFO(get_logger(), "[OctomapServer]: translating map by %.2f, %.2f, %.2f", x, y, z);
-
-  octree->expand();
-
-  // allocate the new future octree
-  std::shared_ptr<OcTree_t> octree_new = std::make_shared<OcTree_t>(octree_resolution_);
-  octree_new->setProbHit(octree->getProbHit());
-  octree_new->setProbMiss(octree->getProbMiss());
-  octree_new->setClampingThresMin(octree->getClampingThresMin());
-  octree_new->setClampingThresMax(octree->getClampingThresMax());
-
-  for (OcTree_t::leaf_iterator it = octree->begin_leafs(), end = octree->end_leafs(); it != end; ++it) {
-
-    auto coords = it.getCoordinate();
-
-    coords.x() += float(x);
-    coords.y() += float(y);
-    coords.z() += float(z);
-
-    auto value = it->getValue();
-    /* auto key   = it.getKey(); */
-
-    auto new_key = octree_new->coordToKey(coords);
-
-    octree_new->setNodeValue(new_key, value);
-  }
-
-  octree_new->prune();
-
-  octree = octree_new;
-
-  RCLCPP_INFO(get_logger(), "[OctomapServer]: map translated");
-
-  return true;
 }
 
 //}
@@ -1054,7 +934,6 @@ rclcpp::CallbackGroup::SharedPtr OctomapServer::new_cbk_grp() {
   return new_group;
 }
 //}
-
 
 /* parse_param() //{ */
 // just a util function for loading parameters
