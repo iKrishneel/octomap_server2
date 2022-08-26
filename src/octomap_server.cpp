@@ -555,21 +555,16 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& robotOri
 
       octomap::KeyRay::iterator alternative_ray_end = keyRay.end();
 
-      for (octomap::KeyRay::iterator it2 = keyRay.begin(), end = keyRay.end(); it2 != end; ++it2) {
-
-        if (!_unknown_rays_clear_occupied_) {
-
-          // check if the cell is occupied in the map
+      // check if the cell is occupied in the map
+      if (!_unknown_rays_clear_occupied_) {
+        for (octomap::KeyRay::iterator it2 = keyRay.begin(), end = keyRay.end(); it2 != end; ++it2) {
           auto node = octree_local_->search(*it2);
-
           if (node && octree_local_->isNodeOccupied(node)) {
-
             if (it2 == keyRay.begin()) {
               alternative_ray_end = keyRay.begin();  // special case
             } else {
               alternative_ray_end = it2 - 1;
             }
-
             break;
           }
         }
@@ -587,19 +582,20 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& robotOri
     octomap::KeyRay key_ray;
     if (computeRayKeys(octree_local_, sensor_origin, coords, key_ray)) {
 
-      for (octomap::KeyRay::iterator it2 = key_ray.begin(), end = key_ray.end(); it2 != end; ++it2) {
+      octomap::KeyRay::iterator alternative_ray_end = key_ray.end();
 
+      for (octomap::KeyRay::iterator it2 = key_ray.begin(), end = key_ray.end(); it2 != end; ++it2) {
         if (occupied_cells.count(*it2)) {
 
-          octomap::KeyRay::iterator last_key = it2 != key_ray.begin() ? it2 - 1 : key_ray.begin();
-
-          free_cells.insert(key_ray.begin(), last_key);
-          break;
-
-        } else {
-          free_cells.insert(key_ray.begin(), key_ray.end());
+            if (it2 == key_ray.begin()) {
+              alternative_ray_end = key_ray.begin();  // special case
+            } else {
+              alternative_ray_end = it2 - 1;
+            }
+            break;
         }
       }
+      free_cells.insert(key_ray.begin(), alternative_ray_end);
     }
   }
 
@@ -676,7 +672,6 @@ void OctomapServer::insertPointCloud(const geometry_msgs::msg::Vector3& robotOri
   if (_local_map_compress_) {
     octree_local_->prune();
   }
-
 
   rclcpp::Time time_end = get_clock()->now();
   {
