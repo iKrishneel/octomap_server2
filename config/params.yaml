@@ -39,7 +39,7 @@ global_map:
 unknown_rays:
 
   update_free_space: true
-  clear_occupied: false # beware, setting this to true is very dangerous
+  clear_occupied: true  # beware, setting this to true can be very dangerous
   ray_distance: 15.0
 
 sensor_model:
