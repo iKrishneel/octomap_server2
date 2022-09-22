@@ -10,20 +10,27 @@ add_definitions("-Wpedantic")
 add_definitions("-g")
 add_definitions("-O3") # because normal release is just -O2
 
+# remove debug info from octomap
+add_definitions("-DOCTOMAP_NODEBUGOUT")
+# remove warning info from PCL
+set(PCL_FIND_QUIETLY INTERNAL)
+
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 
 find_package(rclcpp_components REQUIRED)
-find_package(PCL 1.7 REQUIRED)
+find_package(PCL REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(pcl_ros REQUIRED)
 find_package(pcl_conversions REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(octomap REQUIRED)
+find_package(octomap_ros REQUIRED)
 find_package(octomap_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -40,19 +47,6 @@ include_directories(
   ${PCL_INCLUDE_DIRS}
   )
 
-## --------------------------------------------------------------
-## |                     Octomap conversions                    |
-## --------------------------------------------------------------
-
-add_library(OctomapConversions SHARED
-  src/conversions.cpp
-  )
-
-ament_target_dependencies(OctomapConversions
-  rclcpp
-  )
-
-ament_export_libraries(OctomapConversions)
 
 ## --------------------------------------------------------------
 ## |                       Octomap server                       |
@@ -60,12 +54,12 @@ ament_export_libraries(OctomapConversions)
 
 add_library(octomap_server2 SHARED
   src/octomap_server.cpp
-  src/transforms.cpp
   )
 
 ament_target_dependencies(octomap_server2
   rclcpp
   PCL
+  pcl_ros
   pcl_conversions
   sensor_msgs
   std_msgs
@@ -74,6 +68,7 @@ ament_target_dependencies(octomap_server2
   geometry_msgs
   std_srvs
   octomap
+  octomap_ros
   octomap_msgs
   message_filters
   tf2_ros
@@ -103,7 +98,6 @@ install(
 ament_export_include_directories(include)
 install(
   TARGETS
-  OctomapConversions
   octomap_server2
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib

@@ -2,12 +2,15 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>octomap_server2</name>
-  <version>0.0.1</version>
+  <version>0.1.0</version>
   <description>Octomap server for Ros2</description>
-  <maintainer email="krishneel@krish.neel">Krishneel Chaudhary</maintainer>
+  <author email="krishneel@krish.neel">Krishneel Chaudhary</author>
+  <maintainer email="stibinger@fly4future.com">Petr Stibinger</maintainer>
+  <maintainer email="spurny@fly4future.com">Vojtech Spurny</maintainer>
+
   <license>TODO: License declaration</license>
 
- <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
   <build_depend>rclcpp</build_depend>
   <build_depend>rclcpp_components</build_depend>
@@ -19,10 +22,12 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
+  <build_depend>pcl_ros</build_depend>
   <build_depend>pcl_conversions</build_depend>
   <build_depend>pcl_msgs</build_depend>
-  <build_depend>octomap_msgs</build_depend>
   <build_depend>octomap</build_depend>
+  <build_depend>octomap_ros</build_depend>
+  <build_depend>octomap_msgs</build_depend>
   <build_depend>laser_geometry</build_depend>
 
   <exec_depend>launch_ros</exec_depend>
@@ -36,10 +41,12 @@
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>pcl_ros</exec_depend>
   <exec_depend>pcl_conversions</exec_depend>
   <exec_depend>pcl_msgs</exec_depend>
-  <exec_depend>octomap_msgs</exec_depend>
   <exec_depend>octomap</exec_depend>
+  <exec_depend>octomap_ros</exec_depend>
+  <exec_depend>octomap_msgs</exec_depend>
   <exec_depend>laser_geometry</exec_depend>
 
   <export>

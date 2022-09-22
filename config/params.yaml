@@ -1,49 +1,51 @@
-resolution: 0.20
-frame_id: "stable_origin"
-compress_map: true
-update_free_space_using_missing_data: true
+map_while_grounded: true
+
+# resolution on the lowest level (fractor = 0, depth = max depth)
+resolution: 0.2 # [m]
+
+local_map:
+
+  # the bounding box distance of the local map
+  size:
+    width: 20 # [m]
+    height: 10 # [m]
+
+  # the publisher rate of the local map
+  publisher_rate: 10.0 # [Hz]
+
+  # should we prune the map?
+  compress: true
+
+  publish_full: false # should publish map with full probabilities?
+  publish_binary: true # should publish map with binary occupancy?
+
+global_map:
+
+  # should create a global map from the local map?
+  enabled: false
+
+  # the publisher rate of the global map
+  publisher_rate: 1.0 # [Hz]
+
+  # the rate of inserting the local map into the global map
+  creation_rate: 1.0 # [Hz]
+
+  # should we prune the map?
+  compress: true
+
+  publish_full: false # should publish map with full probabilities?
+  publish_binary: true # should publish map with binary occupancy?
+
+unknown_rays:
+
+  update_free_space: true
+  clear_occupied: true  # beware, setting this to true can be very dangerous
+  ray_distance: 15.0
 
 sensor_model:
-  max_range: 10.0  #set to -1.0 for unlimited range
-  min_range: 0.4
-  hit: 0.9
-  miss: 0.4
-  min: 0.3
-  max: 0.9
-
-filter_speckles: false
-ground_filter:
-  enable: true
-  distance: 0.6
-
-local_mapping:
-  enable: true
-  distance: 10.0
-
-visualization:
-  occupancy_min_z: -1.79769e+308
-  occupancy_max_z: 1.79769e+308
-
-  colored_map: 
-    enabled: false
-
-  height_map: 
-    enabled: true
-    color_factor: 0.8
-    color:
-      r: 1.0
-      g: 0.0
-      b: 0.0
-      a: 1.0
-
-  publish_free_space: true
-  color_free:
-    r: 0.0
-    g: 1.0
-    b: 0.0
-    a: 1.0
-  
-  downprojected_2D_map:
-    incremental_projection: false
-    min_x_size: 30.0
-    min_y_size: 30.0
+  min_range: 0.4 # [m] ignore points closer than this
+  max_range: 10.0 # [m] ignore points further than this
+  min: 0.3  # [0, 1] occupancy threshold for definetly free
+  max: 0.9  # [0, 1] occupancy threshold for definetly occupied
+  hit: 0.9  # [0, 1]
+  miss: 0.4 # [0, 1]

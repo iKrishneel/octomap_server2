@@ -30,243 +30,227 @@
 #ifndef _OCTOMAP_SERVER_HPP_
 #define _OCTOMAP_SERVER_HPP_
 
-#include <chrono>
+/* includes //{ */
 
 #include <rclcpp/rclcpp.hpp>
 
-#include <visualization_msgs/msg/marker_array.hpp>
-#include <nav_msgs/msg/occupancy_grid.hpp>
-#include <std_msgs/msg/color_rgba.hpp>
+#include <octomap/OcTreeNode.h>
+#include <octomap/octomap.h>
+#include <octomap/OcTreeKey.h>
+
 #include <geometry_msgs/msg/point.hpp>
 #include <geometry_msgs/msg/vector3.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
-
-#include <sensor_msgs/msg/point_cloud2.hpp>
-#include <sensor_msgs/msg/laser_scan.hpp>
+#include <sensor_msgs/msg/point_cloud.hpp>
+#include <sensor_msgs/msg/laser_scan.h>
 #include <std_srvs/srv/empty.hpp>
 
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/Geometry>
+
+#include <pcl_ros/transforms.hpp>
 #include <pcl/point_types.h>
 #include <pcl/conversions.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/common/transforms.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
-
-#include <tf2/buffer_core.h>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
-#include <tf2_ros/create_timer_ros.h>
-#include <tf2_ros/message_filter.h>
-
+#include <octomap_msgs/srv/get_octomap.hpp>
 #include <octomap_msgs/conversions.h>
 #include <octomap_msgs/msg/octomap.hpp>
-#include <octomap_msgs/srv/get_octomap.hpp>
+#include <octomap_msgs/srv/get_octomap.h>
 #include <octomap_msgs/srv/bounding_box_query.hpp>
-
-#include <octomap/octomap.h>
-#include <octomap/OcTreeKey.h>
-
-#include <octomap_server2/transforms.hpp>
-#include <octomap_server2/conversions.h>
 
 #include <laser_geometry/laser_geometry.hpp>
 
+#include "octomap_server2/octomap_server.hpp"
+
+#include <cmath>
+//}
+
 namespace octomap_server
 {
+
+/* defines //{ */
+
+using vec3s_t = Eigen::Matrix<float, 3, -1>;
+using vec3_t  = Eigen::Vector3f;
+
+struct xyz_lut_t
+{
+  vec3s_t directions;  // a matrix of normalized direction column vectors
+  vec3s_t offsets;     // a matrix of offset vectors
+};
+
+
+using PCLPoint      = pcl::PointXYZ;
+using PCLPointCloud = pcl::PointCloud<PCLPoint>;
+using OcTree_t      = octomap::OcTree;
+
+typedef enum
+{
+
+  LIDAR_3D,
+  LIDAR_2D,
+  LIDAR_1D,
+  DEPTH_CAMERA,
+  ULTRASOUND,
+
+} SensorType_t;
+
+//}
+
+/* class OctomapServer //{ */
+
 class OctomapServer : public rclcpp::Node {
 
 public:
-#ifdef COLOR_OCTOMAP_SERVER
-  using PCLPoint      = pcl::PointXYZRGB;
-  using PCLPointCloud = pcl::PointCloud<PCLPoint>;
-  using OcTreeT       = octomap::ColorOcTree;
-#else
-  using PCLPoint      = pcl::PointXYZ;
-  using PCLPointCloud = pcl::PointCloud<PCLPoint>;
-  using OcTreeT       = octomap::OcTree;
-#endif
+  OctomapServer(rclcpp::NodeOptions options);
+  bool callbackResetMap(const std::shared_ptr<std_srvs::srv::Empty::Request> request, std::shared_ptr<std_srvs::srv::Empty::Response> response);
 
-  using OctomapSrv = octomap_msgs::srv::GetOctomap;
-  using BBXSrv     = octomap_msgs::srv::BoundingBoxQuery;
+  void callback3dLidarCloud2(const sensor_msgs::msg::PointCloud2::UniquePtr msg, const SensorType_t sensor_type, const int sensor_id);
+  void callbackLaserScan(const sensor_msgs::msg::LaserScan::UniquePtr msg);
 
+private:
+  // | --------------------------- TF ----------------------------|
 
-  explicit OctomapServer(const rclcpp::NodeOptions&, const std::string = "octomap_server");
-  virtual ~OctomapServer();
-  virtual bool octomapBinarySrv(const std::shared_ptr<OctomapSrv::Request>, std::shared_ptr<OctomapSrv::Response>);
-  virtual bool octomapFullSrv(const std::shared_ptr<OctomapSrv::Request>, std::shared_ptr<OctomapSrv::Response>);
+  std::shared_ptr<tf2_ros::Buffer>            tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
-  bool clearBBXSrv(const std::shared_ptr<BBXSrv::Request>, std::shared_ptr<BBXSrv::Response>);
-  bool resetSrv(const std::shared_ptr<std_srvs::srv::Empty::Request>, std::shared_ptr<std_srvs::srv::Empty::Response>);
+  // | -------------------- topic subscribers ------------------- |
 
-  virtual void insertCloudCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr&);
-  virtual void insertLaserScanCallback(const sensor_msgs::msg::LaserScan::ConstSharedPtr&);
-  virtual bool openFile(const std::string& filename);
+  std::vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr> sub_3dlaser_pc2_;
+  std::vector<rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr> sub_depth_cam_pc2_;
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr                sub_laser_scan_;
 
-protected:
-  std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>> m_pointCloudSub;
-  std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::PointCloud2>>      m_tfPointCloudSub;
+  // | ----------------------- publishers ----------------------- |
 
-  std::shared_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> m_laserScanSub;
-  std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>      m_tfLaserScanSub;
+  rclcpp::Publisher<octomap_msgs::msg::Octomap>::SharedPtr pub_map_global_full_;
+  rclcpp::Publisher<octomap_msgs::msg::Octomap>::SharedPtr pub_map_global_binary_;
 
-  static std_msgs::msg::ColorRGBA heightMapColor(double h);
+  rclcpp::Publisher<octomap_msgs::msg::Octomap>::SharedPtr pub_map_local_full_;
+  rclcpp::Publisher<octomap_msgs::msg::Octomap>::SharedPtr pub_map_local_binary_;
 
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr        m_occupiedPointCloudPub;
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr        m_freePointCloudPub;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr m_fmarkerPub;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr m_markerPub;
-  rclcpp::Publisher<octomap_msgs::msg::Octomap>::SharedPtr           m_binaryMapPub;
-  rclcpp::Publisher<octomap_msgs::msg::Octomap>::SharedPtr           m_fullMapPub;
-  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr         m_mapPub;
+  // | -------------------- service serviers -------------------- |
 
-  rclcpp::Service<OctomapSrv>::SharedPtr           m_octomapBinaryService;
-  rclcpp::Service<OctomapSrv>::SharedPtr           m_octomapFullService;
-  rclcpp::Service<BBXSrv>::SharedPtr               m_clearBBXService;
-  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr m_resetService;
+  rclcpp::Service<std_srvs::srv::Empty>::SharedPtr service_reset_map_;
 
-  std::shared_ptr<tf2_ros::Buffer>            m_buffer;
-  std::shared_ptr<tf2_ros::TransformListener> m_tfListener;
+  // | ------------------------- timers ------------------------- |
 
-  std::shared_ptr<OcTreeT> m_octree;
+  rclcpp::TimerBase::SharedPtr timer_global_map_publisher_;
+  double     _global_map_publisher_rate_;
+  void       timerGlobalMapPublisher();
 
-  octomap::KeyRay    m_keyRay;  // temp storage for ray casting
-  octomap::OcTreeKey m_updateBBXMin;
-  octomap::OcTreeKey m_updateBBXMax;
+  rclcpp::TimerBase::SharedPtr timer_global_map_creator_;
+  double     _global_map_creator_rate_;
+  void       timerGlobalMapCreator();
 
-  double                   m_maxRange;
-  double                   m_minRange;
-  std::string              m_worldFrameId;  // the map frame
-  bool                     m_useHeightMap;
-  std_msgs::msg::ColorRGBA m_color;
-  std_msgs::msg::ColorRGBA m_colorFree;
-  double                   m_colorFactor;
-  bool                     m_publishFreeSpace;
-  double                   m_res;
-  unsigned                 m_treeDepth;
-  unsigned                 m_maxTreeDepth;
-  double                   m_occupancyMinZ;
-  double                   m_occupancyMaxZ;
-  double                   m_minSizeX;
-  double                   m_minSizeY;
-  bool                     m_filterSpeckles;
-  bool                     m_compressMap;
+  rclcpp::TimerBase::SharedPtr timer_local_map_publisher_;
+  void       timerLocalMapPublisher();
 
-  bool   m_filterGroundPlane;
-  double m_ZGroundFilterDistance;
+  rclcpp::TimerBase::SharedPtr timer_local_map_resizer_;
+  void       timerLocalMapResizer();
 
-  bool   m_localMapping;
-  double m_localMapDistance;
+  // | ----------------------- parameters ----------------------- |
 
-  bool m_updateFreeSpaceUsingMissingData;
+  std::atomic<bool> is_initialized_     = false;
+  std::atomic<bool> getting_laser_scan_ = false;
+  rclcpp::Time      last_time_depth_cam_;
+  rclcpp::Time      last_time_3d_laser;
+  rclcpp::Time      last_time_laser_scan_;
 
+  // | -------------------- callback groups ----------------------|
 
-  // downprojected 2D map:
-  bool                         m_incrementalUpdate;
-  nav_msgs::msg::OccupancyGrid m_gridmap;
-  bool                         m_publish2DMap;
-  bool                         m_mapOriginChanged;
-  octomap::OcTreeKey           m_paddedMinKey;
-  unsigned                     m_multires2DScale;
-  bool                         m_projectCompleteMap;
-  bool                         m_useColoredMap;
+  // a shared pointer to each callback group has to be saved or the callbacks will never get called
+  std::vector<rclcpp::CallbackGroup::SharedPtr> callback_groups_;
+  // new callback groups have to be initialized using this function to be saved into callback_groups_
+  rclcpp::CallbackGroup::SharedPtr new_cbk_grp();
 
-  bool m_isInitialized;
+  template<class T>
+    bool parse_param(const std::string &param_name, T &param_dest, rclcpp::Node& node);
+
+  bool        _simulation_;
+  std::string _uav_name_;
+
+  double _robot_height_;
+
+  bool _global_map_publish_full_;
+  bool _global_map_publish_binary_;
+  bool _global_map_enabled_;
+
+  bool _map_while_grounded_;
+
+  bool _local_map_publish_full_;
+  bool _local_map_publish_binary_;
+
+  std::shared_ptr<OcTree_t> octree_global_;
+  std::mutex                mutex_octree_global_;
+
+  std::shared_ptr<OcTree_t> octree_local_;
+  std::shared_ptr<OcTree_t> octree_local_0_;
+  std::shared_ptr<OcTree_t> octree_local_1_;
+  int                       octree_local_idx_ = 0;
+  std::mutex                mutex_octree_local_;
+
+  std::atomic<bool> octrees_initialized_ = false;
+
+  double     avg_time_cloud_insertion_ = 0;
+  std::mutex mutex_avg_time_cloud_insertion_;
+
+  std::string _world_frame_;
+  std::string _robot_frame_;
+  double      octree_resolution_;
+  bool        _global_map_compress_;
+  bool        _local_map_compress_;
+  std::string _map_path_;
+
+  int        _local_map_width_;
+  int        _local_map_height_;
+  int        local_map_width_;
+  int        local_map_height_;
+  std::mutex mutex_local_map_dimensions_;
+  double     _local_map_publisher_rate_;
+
+  double     local_map_duty_ = 0;
+  std::mutex mutex_local_map_duty_;
+
+  bool   _unknown_rays_update_free_space_;
+  bool   _unknown_rays_clear_occupied_;
+  double _unknown_rays_distance_;
 
   laser_geometry::LaserProjection projector_;
 
-  bool clearOutsideBBX(const octomap::point3d& p_min, const octomap::point3d& p_max);
+  bool clearOutsideBBX(std::shared_ptr<OcTree_t>& octree, const octomap::point3d& p_min, const octomap::point3d& p_max);
 
-  inline static void updateMinKey(const octomap::OcTreeKey& in, octomap::OcTreeKey& min) {
-    for (unsigned i = 0; i < 3; ++i)
-      min[i] = std::min(in[i], min[i]);
-  };
+  bool copyInsideBBX2(std::shared_ptr<OcTree_t>& from, std::shared_ptr<OcTree_t>& to, const octomap::point3d& p_min, const octomap::point3d& p_max);
 
-  inline static void updateMaxKey(const octomap::OcTreeKey& in, octomap::OcTreeKey& max) {
-    for (unsigned i = 0; i < 3; ++i)
-      max[i] = std::max(in[i], max[i]);
-  };
+  bool copyLocalMap(std::shared_ptr<OcTree_t>& from, std::shared_ptr<OcTree_t>& to);
 
-  /// Test if key is within update area of map (2D, ignores height)
-  inline bool isInUpdateBBX(const OcTreeT::iterator& it) const {
-    // 2^(tree_depth-depth) voxels wide:
-    unsigned           voxelWidth = (1 << (m_maxTreeDepth - it.getDepth()));
-    octomap::OcTreeKey key        = it.getIndexKey();  // lower corner of voxel
-    return (key[0] + voxelWidth >= m_updateBBXMin[0] && key[1] + voxelWidth >= m_updateBBXMin[1] && key[0] <= m_updateBBXMax[0] && key[1] <= m_updateBBXMax[1]);
-  }
+  bool computeRayKeys(std::shared_ptr<OcTree_t>& octree, const octomap::point3d& origin, const octomap::point3d& end, octomap::KeyRay& ray);
 
-  void         publishBinaryOctoMap(const rclcpp::Time& rostime) const;
-  void         publishFullOctoMap(const rclcpp::Time& rostime) const;
-  virtual void publishAll(const rclcpp::Time& rostime);
+  octomap::OcTreeNode* touchNodeRecurs(std::shared_ptr<OcTree_t>& octree, octomap::OcTreeNode* node, const octomap::OcTreeKey& key, unsigned int depth,
+                                       unsigned int max_depth);
 
-  /**
-   * @brief update occupancy map with a scan
-   * The scans should be in the global map frame.
-   *
-   * @param sensorOrigin origin of the measurements for raycasting
-   * @param cloud
-   * @param free_cloud
-   */
-  virtual void insertData(const geometry_msgs::msg::Vector3& sensorOrigin, const PCLPointCloud::ConstPtr& cloud, const PCLPointCloud::ConstPtr& free_cloud);
+  octomap::OcTreeNode* touchNode(std::shared_ptr<OcTree_t>& octree, const octomap::OcTreeKey& key, unsigned int target_depth);
 
-  /**
-   * @brief Find speckle nodes (single occupied voxels with no neighbors). Only works on lowest resolution!
-   * @param key
-   * @return
-   */
-  bool isSpeckleNode(const octomap::OcTreeKey& key) const;
+  bool createLocalMap(const std::string frame_id, const double horizontal_distance, const double vertical_distance, std::shared_ptr<OcTree_t>& octree);
 
-  /// hook that is called before traversing all nodes
-  virtual void handlePreNodeTraversal(const rclcpp::Time& rostime);
+  virtual void insertPointCloud(const geometry_msgs::msg::Vector3& robotOrigin, const geometry_msgs::msg::Vector3& sensorOrigin, 
+                                const PCLPointCloud::ConstPtr& cloud, const PCLPointCloud::ConstPtr& free_cloud);
 
-  /// hook that is called when traversing all nodes of the updated Octree (does nothing here)
-  virtual void handleNode([[maybe_unused]] const OcTreeT::iterator& it){};
-
-  /// hook that is called when traversing all nodes of the updated Octree in the updated area (does nothing here)
-  virtual void handleNodeInBBX([[maybe_unused]] const OcTreeT::iterator& it){};
-
-  /// hook that is called when traversing occupied nodes of the updated Octree
-  virtual void handleOccupiedNode(const OcTreeT::iterator& it);
-
-  /// hook that is called when traversing occupied nodes in the updated area (updates 2D map projection here)
-  virtual void handleOccupiedNodeInBBX(const OcTreeT::iterator& it);
-
-  /// hook that is called when traversing free nodes of the updated Octree
-  virtual void handleFreeNode(const OcTreeT::iterator& it);
-
-  /// hook that is called when traversing free nodes in the updated area (updates 2D map projection here)
-  virtual void handleFreeNodeInBBX(const OcTreeT::iterator& it);
-
-  /// hook that is called after traversing all nodes
-  virtual void handlePostNodeTraversal(const rclcpp::Time& rostime);
-
-  /// updates the downprojected 2D map as either occupied or free
-  virtual void update2DMap(const OcTreeT::iterator& it, bool occupied);
-
-  inline unsigned mapIdx(int i, int j) const {
-    return m_gridmap.info.width * j + i;
-  }
-
-  inline unsigned mapIdx(const octomap::OcTreeKey& key) const {
-    return mapIdx((key[0] - m_paddedMinKey[0]) / m_multires2DScale, (key[1] - m_paddedMinKey[1]) / m_multires2DScale);
-  }
-
-  /**
-   * Adjust data of map due to a change in its info properties (origin or size,
-   * resolution needs to stay fixed). map already contains the new map info,
-   * but the data is stored according to oldMapInfo.
-   */
-  void adjustMapData(nav_msgs::msg::OccupancyGrid& map, const nav_msgs::msg::MapMetaData& oldMapInfo) const;
-
-  inline bool mapChanged(const nav_msgs::msg::MapMetaData& oldMapInfo, const nav_msgs::msg::MapMetaData& newMapInfo) {
-    return (oldMapInfo.height != newMapInfo.height || oldMapInfo.width != newMapInfo.width || oldMapInfo.origin.position.x != newMapInfo.origin.position.x ||
-            oldMapInfo.origin.position.y != newMapInfo.origin.position.y);
-  }
-
-  template <class T>
-  bool parse_param(const std::string& param_name, T& param_dest);
+  // sensor model
+  double _probHit_;
+  double _probMiss_;
+  double _thresMin_;
+  double _thresMax_;
+  double _rangeMin_;
+  double _rangeMax_;
 };
+
+//}
+
 }  // namespace octomap_server
 
 #endif  // _OCTOMAP_SERVER_HPP_
