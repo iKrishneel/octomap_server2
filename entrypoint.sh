@@ -14,7 +14,8 @@ _term() {
 	fi
 	kill -s SIGINT $pid
 }
-trap _term SIGTERM
+# Use SIGTERM or TERM, does not seem to make any difference.
+trap _term TERM
 
 ROS_FLAGS=""
 if [[ ${SIMULATION+x} != "" ]]; then
@@ -25,6 +26,15 @@ ros-with-env ros2 launch octomap_server2 octomap_server.py ${ROS_FLAGS} &
 child=$!
 
 echo "Waiting for pid $child"
+# * Calling "wait" will then wait for the job with the specified by $child to finish, or for any signals to be fired.
+#   Due to "or for any signals to be fired", "wait" will also handle SIGTERM and it will shutdown before
+#   the node ends gracefully.
+#   The solution is to add a second "wait" call and remove the trap between the two calls.
+# * Do not use -e flag in the first wait call because wait will exit with error after catching SIGTERM.
+set +e
+wait $child
+set -e
+trap - TERM
 wait $child
 RESULT=$?
 
