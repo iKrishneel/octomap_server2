@@ -163,8 +163,8 @@ void OctomapServer::callbackLaserScan(const sensor_msgs::msg::LaserScan::UniqueP
 
   RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 1000, "[OctomapServer]: callbackLaserScan()");
 
-  PCLPointCloud::Ptr pc              = boost::make_shared<PCLPointCloud>();
-  PCLPointCloud::Ptr free_vectors_pc = boost::make_shared<PCLPointCloud>();
+  PCLPointCloud::Ptr pc              = std::make_shared<PCLPointCloud>();
+  PCLPointCloud::Ptr free_vectors_pc = std::make_shared<PCLPointCloud>();
 
   Eigen::Matrix4f                      sensorToWorld;
   geometry_msgs::msg::TransformStamped sensorToWorldTf;
@@ -957,5 +957,5 @@ bool OctomapServer::parse_param(const std::string &param_name, T &param_dest, rc
 
 }  // namespace octomap_server
 
-#include <rclcpp_components/register_node_macro.hpp>
+#include "rclcpp_components/register_node_macro.hpp"
 RCLCPP_COMPONENTS_REGISTER_NODE(octomap_server::OctomapServer)

@@ -58,6 +58,7 @@ add_library(octomap_server2 SHARED
 
 ament_target_dependencies(octomap_server2
   rclcpp
+  rclcpp_components
   PCL
   pcl_ros
   pcl_conversions
