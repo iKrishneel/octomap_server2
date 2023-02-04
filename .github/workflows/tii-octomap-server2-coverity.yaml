@@ -1,0 +1,31 @@
+name: tii-octomap-server2
+
+on:
+  repository_dispatch:
+  push:
+
+jobs:
+  coverity:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build coverity scan image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: false
+          tags: coverity-scan-image:latest
+          dockerfile: Dockerfile.coverity
+      - name: run coverity static analysis
+        uses: addnab/docker-run-action@v3
+        with:
+          context: .
+          env: COVERITY_PASSPHRASE=${{ secrets.COVERITY_PASSPHRASE }}
+          image: coverity-scan-image:latest
+          mount-path: /workspace/timos/coverity/cov-analysis-linux64-2022.12.1:/cov

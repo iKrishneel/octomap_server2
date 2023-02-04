@@ -7,6 +7,7 @@ on:
 
 jobs:
   tii-octomap-server2:
+    if: ${{ false }} //disabled to debug self-hosted runner
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
