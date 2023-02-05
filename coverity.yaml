@@ -1,0 +1,9 @@
+capture:
+  build:
+    build-command: SKIP_BUILD_UNDERLAY_STEPS=true /packaging/build.sh
+
+commit:
+  connect:
+    auth-key-file: auth-key.txt
+    stream: test_run_docker
+    url: https://coverity.ssrc.fi:443/
