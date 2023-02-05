@@ -25,7 +25,6 @@ jobs:
       - name: run coverity static analysis
         uses: addnab/docker-run-action@v3
         with:
-          context: .
           env: COVERITY_PASSPHRASE=${{ secrets.COVERITY_PASSPHRASE }}
           image: coverity-scan-image:latest
-          mount-path: /workspace/timos/coverity/cov-analysis-linux64-2022.12.1:/cov
+          options: --mount type=bind,source=/workspace/timos/coverity/cov-analysis-linux64-2022.12.1,target=/cov
