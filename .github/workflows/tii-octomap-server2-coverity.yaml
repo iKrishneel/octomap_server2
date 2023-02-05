@@ -21,7 +21,7 @@ jobs:
           context: .
           push: false
           tags: coverity-scan-image:latest
-          dockerfile: Dockerfile.coverity
+          file: Dockerfile.coverity
       - name: run coverity static analysis
         uses: addnab/docker-run-action@v3
         with:
