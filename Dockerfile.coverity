@@ -14,4 +14,4 @@ COPY license.dat /
 
 RUN git config --global --add safe.directory /main_ws/src
 
-# ENTRYPOINT [ "entrypoint-coverity.sh" ]
+ENTRYPOINT [ "entrypoint-coverity.sh" ]
