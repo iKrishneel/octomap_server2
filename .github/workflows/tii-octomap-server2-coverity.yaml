@@ -29,6 +29,10 @@ jobs:
         with:
           image: coverity-scan-image:latest
           options: -v /workspace/timos/coverity/cov-analysis-linux64-2022.12.1:/cov -e COVERITY_PASSPHRASE=${{ secrets.COVERITY_PASSPHRASE }}
+          run: |
+            echo "uudet printit"
+            ls
+            ls -al /
       - name: Collect docker logs on failure
         uses: jwalton/gh-docker-logs@v2
         with:
