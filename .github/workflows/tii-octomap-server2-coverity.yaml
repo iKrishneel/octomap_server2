@@ -29,3 +29,14 @@ jobs:
         with:
           image: coverity-scan-image:latest
           options: --mount type=bind,source=/workspace/timos/coverity/cov-analysis-linux64-2022.12.1,target=/cov
+      - name: Collect docker logs on failure
+        uses: jwalton/gh-docker-logs@v2
+        with:
+          dest: './logs'
+      - name: Tar logs
+        run: tar cvzf ./logs.tgz ./logs
+      - name: Upload logs to GitHub
+        uses: actions/upload-artifact@master
+        with:
+          name: logs.tgz
+          path: ./logs.tgz
