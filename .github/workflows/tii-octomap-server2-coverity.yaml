@@ -23,8 +23,9 @@ jobs:
           tags: coverity-scan-image:latest
           file: Dockerfile.coverity
       - name: run coverity static analysis
+        env:
+          COVERITY_PASSPHRASE: ${{ secrets.COVERITY_PASSPHRASE }}
         uses: addnab/docker-run-action@v3
         with:
-          env: COVERITY_PASSPHRASE=${{ secrets.COVERITY_PASSPHRASE }}
           image: coverity-scan-image:latest
           options: --mount type=bind,source=/workspace/timos/coverity/cov-analysis-linux64-2022.12.1,target=/cov
