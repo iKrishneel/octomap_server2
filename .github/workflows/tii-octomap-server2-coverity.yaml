@@ -28,7 +28,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: coverity-scan-image:latest
-          options: --mount type=bind,source=/workspace/timos/coverity/cov-analysis-linux64-2022.12.1,target=/cov
+          options: -v /workspace/timos/coverity/cov-analysis-linux64-2022.12.1:/cov -e COVERITY_PASSPHRASE=${{ secrets.COVERITY_PASSPHRASE }}
       - name: Collect docker logs on failure
         uses: jwalton/gh-docker-logs@v2
         with:
