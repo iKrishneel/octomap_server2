@@ -33,6 +33,8 @@ jobs:
             echo "uudet printit"
             ls
             ls -al /
+            ls -al /cov
+            /cov/bin/cov-manage-im --mode auth-key --mode auth-key --create --output-file auth_key.txt --url https://coverity.ssrc.fi:443 --user cov_scan --set description:"ci test key" --set expiration:"after_1_days"
       - name: Collect docker logs on failure
         uses: jwalton/gh-docker-logs@v2
         with:
