@@ -30,19 +30,18 @@ jobs:
           image: coverity-scan-image:latest
           options: -v /home/administrator/cov-analysis-linux64-2022.9.1:/cov -e COVERITY_PASSPHRASE=${{ secrets.COVERITY_PASSPHRASE }}
           run: |
-            echo "uudet printit"
-            ls
-            ls -al /
-            ls -al /cov
-            # no access from pmk to coverity yet (it is working on it)
             /cov/bin/cov-manage-im --mode auth-key --mode auth-key --create --output-file auth_key.txt --url https://coverity.ssrc.fi:443 --user cov_scan --set description:"ci test key" --set expiration:"after_1_days"
+            ls -al
       - name: Collect docker logs on failure
+        if: failure()
         uses: jwalton/gh-docker-logs@v2
         with:
           dest: './logs'
       - name: Tar logs
+        if: failure()
         run: tar cvzf ./logs.tgz ./logs
       - name: Upload logs to GitHub
+        if: failure()
         uses: actions/upload-artifact@master
         with:
           name: logs.tgz
