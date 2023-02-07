@@ -7,3 +7,4 @@ commit:
     auth-key-file: auth-key.txt
     stream: test_run_docker
     url: https://coverity.ssrc.fi:443/
+    commit.connect.on-new-cert: trust
