@@ -24,6 +24,7 @@ jobs:
           file: Dockerfile.coverity
       - name: run coverity static analysis
         env:
+          COV_USER: cov_scan
           COVERITY_PASSPHRASE: ${{ secrets.COVERITY_PASSPHRASE }}
         uses: addnab/docker-run-action@v3
         with:
