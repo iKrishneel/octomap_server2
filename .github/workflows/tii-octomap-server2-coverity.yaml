@@ -33,9 +33,9 @@ jobs:
           run: |
             /cov/bin/cov-manage-im --mode auth-key --create --output-file auth_key.txt --url https://coverity.ssrc.fi:443 --user cov_scan --set description:"ci github action" --set expiration:"after_1_days"
             auth_key_id=$(grep -oh id\":[[:digit:]]\\+ auth_key.txt |grep -oh [[:digit:]]\\+)
-            echo "authorization key id: $auth_key_id"
             /cov/bin/coverity scan --exclude-language java
             /cov/bin/coverity list
+            /cov/bin/cov-manage-im --mode auth-key --revoke $auth_key_id
       - name: Collect docker logs on failure
         if: failure()
         uses: jwalton/gh-docker-logs@v2
