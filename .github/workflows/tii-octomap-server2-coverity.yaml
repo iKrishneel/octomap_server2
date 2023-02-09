@@ -31,7 +31,9 @@ jobs:
           image: coverity-scan-image:latest
           options: -v /mnt/jenkins/coverity/cov-analysis-linux64-2022.9.1:/cov -e COVERITY_PASSPHRASE=${{ secrets.COVERITY_PASSPHRASE }} -e COV_USER=cov_scan
           run: |
-            /cov/bin/cov-manage-im --mode auth-key --mode auth-key --create --output-file auth_key.txt --url https://coverity.ssrc.fi:443 --user cov_scan --set description:"ci test key" --set expiration:"after_1_days"
+            /cov/bin/cov-manage-im --mode auth-key --create --output-file auth_key.txt --url https://coverity.ssrc.fi:443 --user cov_scan --set description:"ci github action" --set expiration:"after_1_days"
+            auth_key_id=$(grep -oh id\":[[:digit:]]\\+ auth_key.txt |grep -oh [[:digit:]]\\+)
+            echo "authorization key id: $auth_key_id"
             /cov/bin/coverity scan --exclude-language java
             /cov/bin/coverity list
       - name: Collect docker logs on failure
