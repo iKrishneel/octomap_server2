@@ -21,7 +21,7 @@ jobs:
           context: .
           push: false
           tags: coverity-scan-image:latest
-          file: Dockerfile.doesntexist
+          file: Dockerfile.coverity
       - name: run coverity static analysis
         env:
           COV_USER: cov_scan
