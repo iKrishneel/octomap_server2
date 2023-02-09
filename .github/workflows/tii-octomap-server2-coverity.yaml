@@ -35,7 +35,7 @@ jobs:
             auth_key_id=$(grep -oh id\":[[:digit:]]\\+ auth_key.txt |grep -oh [[:digit:]]\\+)
             /cov/bin/coverity scan --exclude-language java
             /cov/bin/coverity list
-            /cov/bin/cov-manage-im --mode auth-key --revoke $auth_key_id
+            /cov/bin/cov-manage-im --mode auth-key --revoke $auth_key_id --url https://coverity.ssrc.fi:443 --user cov_scan
       - name: Collect docker logs on failure
         if: failure()
         uses: jwalton/gh-docker-logs@v2
