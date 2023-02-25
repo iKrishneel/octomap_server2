@@ -1,17 +1,13 @@
-FROM ghcr.io/tiiuae/fog-ros-baseimage-builder:dp-4266_humble_upgrade AS builder
+FROM fogrosbaseimage_coverity
 
-# TODO: use the same libvtk7-qt-dev-hack_1.0_all.deb hack here to make build faster
-#       (currently fails build, don't know the reason)
-
-# Workaround for rosdep issue with libpcl-dev install
-RUN apt-get update -y && apt-get install -y --no-install-recommends \
-    libpcl-dev
-
-COPY . /main_ws/src/
 COPY coverity.yaml /main_ws/src/
-COPY license.dat /
 # RUN chmod /main_ws/src/auth-key.txt
 
+COPY . /main_ws/src/
 RUN git config --global --add safe.directory /main_ws/src
+
+ARG COVERITY_PASSPHRASE
+ENV COVERITY_PASSPHRASE=${COVERITY_PASSPHRASE}
+ENV COVERITY_CLI_CONNECT_USERNAME=cov_scan
 
 ENTRYPOINT [ "entrypoint-coverity.sh" ]
