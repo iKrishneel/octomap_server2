@@ -1016,7 +1016,7 @@ namespace octomap_server {
                 second_pass.setInputCloud(pc.makeShared());
                 second_pass.filter(ground);
 
-                second_pass.setFilterLimitsNegative (true);
+                second_pass.setNegative(true);
                 second_pass.filter(nonground);
             }
         }
